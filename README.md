@@ -1,6 +1,6 @@
 ## Introduction
 
-**Sajya lucene** is a general purpose text search engine written entirely in PHP 5. Since it stores its index on the filesystem and does not require a database server, it can add search capabilities to almost any PHP-driven website.  
+**Sajya lucene** is a general purpose text search engine written entirely in PHP. Since it stores its index on the filesystem and does not require a database server, it can add search capabilities to almost any PHP-driven website.  
 
 ###### Supports the following features:
 
