@@ -1,1 +1,5 @@
 vendor/
+idea
+.phpstorm.meta.php
+.phpunit.result.cache
+composer.lock

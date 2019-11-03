@@ -1,26 +1,40 @@
 {
-    "name": "zendframework/zendsearch",
+    "name": "sajya/lucene",
     "description": "a general purpose text search engine written entirely in PHP 5",
     "type": "library",
-    "license": "BSD-3-Clause",
+    "license": "MIT",
     "keywords": [
-        "zf2",
         "lucene"
     ],
-    "homepage": "http://packages.zendframework.com/",
+    "homepage": "https://github.com/sajya",
     "autoload": {
-        "psr-0": {
-            "ZendSearch": "library/"
+        "psr-4": {
+            "Sajya\\Lucene\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sajya\\Lucene\\Test\\": "tests/"
         }
     },
     "repositories": [
         {
             "type": "composer",
-            "url": "http://packages.zendframework.com/"
+            "url": "https://packages.zendframework.com/"
         }
     ],
     "require": {
-        "php": ">=5.3.3",
-        "zendframework/zend-stdlib": "2.*"
+        "php": ">=7.2",
+        "ext-mbstring": "*",
+        "ext-zip": "*",
+        "ext-libxml": "*",
+        "zendframework/zend-stdlib": "2.*",
+        "ext-simplexml": "*",
+        "ext-iconv": "*",
+        "ext-dom": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0",
+        "ext-iconv": "*"
     }
 }
