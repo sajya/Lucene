@@ -36,7 +36,7 @@ class Term extends AbstractPreprocessing
      *
      * @var string
      */
-    private $_encoding;
+    private $encoding;
 
     /**
      * Field name.
@@ -55,7 +55,7 @@ class Term extends AbstractPreprocessing
     public function __construct($word, $encoding, $fieldName)
     {
         $this->_word = $word;
-        $this->_encoding = $encoding;
+        $this->encoding = $encoding;
         $this->_field = $fieldName;
     }
 
@@ -83,7 +83,7 @@ class Term extends AbstractPreprocessing
 
             foreach ($searchFields as $fieldName) {
                 $subquery = new Term($this->_word,
-                    $this->_encoding,
+                    $this->encoding,
                     $fieldName);
                 $rewrittenSubquery = $subquery->rewrite($index);
                 foreach ($rewrittenSubquery->getQueryTerms() as $term) {
@@ -131,13 +131,13 @@ class Term extends AbstractPreprocessing
         $result = preg_match('/\pL/u', 'a');
         ErrorHandler::stop();
         if ($result == 1) {
-            $word = iconv($this->_encoding, 'UTF-8', $this->_word);
+            $word = iconv($this->encoding, 'UTF-8', $this->_word);
             $wildcardsPattern = '/[*?]/u';
             $subPatternsEncoding = 'UTF-8';
         } else {
             $word = $this->_word;
             $wildcardsPattern = '/[*?]/';
-            $subPatternsEncoding = $this->_encoding;
+            $subPatternsEncoding = $this->encoding;
         }
 
         $subPatterns = preg_split($wildcardsPattern, $word, -1, PREG_SPLIT_OFFSET_CAPTURE);
@@ -177,7 +177,7 @@ class Term extends AbstractPreprocessing
 
         // -------------------------------------
         // Recognize one-term multi-term and "insignificant" queries
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->encoding);
 
         if (count($tokens) == 0) {
             $this->_matches = [];
@@ -254,13 +254,13 @@ class Term extends AbstractPreprocessing
         $result = preg_match('/\pL/u', 'a');
         ErrorHandler::stop();
         if ($result == 1) {
-            $word = iconv($this->_encoding, 'UTF-8', $this->_word);
+            $word = iconv($this->encoding, 'UTF-8', $this->_word);
             $wildcardsPattern = '/[*?]/u';
             $subPatternsEncoding = 'UTF-8';
         } else {
             $word = $this->_word;
             $wildcardsPattern = '/[*?]/';
-            $subPatternsEncoding = $this->_encoding;
+            $subPatternsEncoding = $this->encoding;
         }
         $subPatterns = preg_split($wildcardsPattern, $word, -1, PREG_SPLIT_OFFSET_CAPTURE);
         if (count($subPatterns) > 1) {
@@ -295,7 +295,7 @@ class Term extends AbstractPreprocessing
 
         // -------------------------------------
         // Recognize one-term multi-term and "insignificant" queries
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->encoding);
 
         if (count($tokens) == 0) {
             // Do nothing

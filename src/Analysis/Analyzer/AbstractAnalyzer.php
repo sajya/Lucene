@@ -4,6 +4,7 @@
 namespace Sajya\Lucene\Analysis\Analyzer;
 
 use Sajya\Lucene\Analysis\Analyzer\AnalyzerInterface as LuceneAnalyzer;
+use Sajya\Lucene\Analysis\Token;
 
 /**
  * General analyzer implementation.
@@ -19,26 +20,25 @@ abstract class AbstractAnalyzer implements LuceneAnalyzer
      *
      * @var string
      */
-    protected $_input = null;
+    protected $input;
 
     /**
      * Input string encoding
      *
      * @var string
      */
-    protected $_encoding = '';
+    protected $encoding = '';
 
     /**
      * Tokenize text to a terms
-     * Returns array of \Sajya\Lucene\Analysis\Token objects
-     *
      * Tokens are returned in UTF-8 (internal Zend_Search_Lucene encoding)
      *
      * @param string $data
+     * @param string $encoding
      *
-     * @return array
+     * @return Token[]
      */
-    public function tokenize($data, $encoding = '')
+    public function tokenize(string $data, string $encoding = ''): array
     {
         $this->setInput($data, $encoding);
 
@@ -55,11 +55,12 @@ abstract class AbstractAnalyzer implements LuceneAnalyzer
      * Set input
      *
      * @param string $data
+     * @param string $encoding
      */
-    public function setInput($data, $encoding = '')
+    public function setInput(string $data, string $encoding = '')
     {
-        $this->_input = $data;
-        $this->_encoding = $encoding;
+        $this->input = $data;
+        $this->encoding = $encoding;
         $this->reset();
     }
 }

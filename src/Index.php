@@ -36,7 +36,7 @@ class Index implements SearchIndexInterface
      *
      * @var DirectoryInterface
      */
-    private $_directory = null;
+    private $directory = null;
     /**
      * File system adapter closing option
      *
@@ -54,13 +54,13 @@ class Index implements SearchIndexInterface
      *
      * @var array|SegmentInfo
      */
-    private $_segmentInfos = [];
+    private $segmentInfos = [];
     /**
      * Number of documents in this index.
      *
      * @var integer
      */
-    private $_docCount = 0;
+    private $docCount = 0;
     /**
      * Flag for index changes
      *
@@ -104,25 +104,25 @@ class Index implements SearchIndexInterface
         }
 
         if (is_string($directory)) {
-            $this->_directory = new Filesystem($directory);
+            $this->directory = new Filesystem($directory);
             $this->_closeDirOnExit = true;
         } else {
-            $this->_directory = $directory;
+            $this->directory = $directory;
             $this->_closeDirOnExit = false;
         }
 
-        $this->_segmentInfos = [];
+        $this->segmentInfos = [];
 
         // Mark index as "under processing" to prevent other processes from premature index cleaning
-        LockManager::obtainReadLock($this->_directory);
+        LockManager::obtainReadLock($this->directory);
 
-        $this->_generation = self::getActualGeneration($this->_directory);
+        $this->_generation = self::getActualGeneration($this->directory);
 
         if ($create) {
             try {
-                LockManager::obtainWriteLock($this->_directory);
+                LockManager::obtainWriteLock($this->directory);
             } catch (Exception $e) {
-                LockManager::releaseReadLock($this->_directory);
+                LockManager::releaseReadLock($this->directory);
 
                 if (strpos($e->getMessage(), 'Can\'t obtain exclusive index lock') === false) {
                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
@@ -137,16 +137,16 @@ class Index implements SearchIndexInterface
                 $nameCounter = 0;
             } else {
                 // Directory contains existing index
-                $segmentsFile = $this->_directory->getFileObject(self::getSegmentFileName($this->_generation));
+                $segmentsFile = $this->directory->getFileObject(self::getSegmentFileName($this->_generation));
                 $segmentsFile->seek(12); // 12 = 4 (int, file format marker) + 8 (long, index version)
 
                 $nameCounter = $segmentsFile->readInt();
                 $this->_generation++;
             }
 
-            Index\Writer::createIndex($this->_directory, $this->_generation, $nameCounter);
+            Index\Writer::createIndex($this->directory, $this->_generation, $nameCounter);
 
-            LockManager::releaseWriteLock($this->_directory);
+            LockManager::releaseWriteLock($this->directory);
         }
 
         if ($this->_generation == -1) {
@@ -252,7 +252,7 @@ class Index implements SearchIndexInterface
      */
     private function _readPre21SegmentsFile(): void
     {
-        $segmentsFile = $this->_directory->getFileObject('segments');
+        $segmentsFile = $this->directory->getFileObject('segments');
 
         $format = $segmentsFile->readInt();
 
@@ -268,15 +268,15 @@ class Index implements SearchIndexInterface
 
         $segments = $segmentsFile->readInt();
 
-        $this->_docCount = 0;
+        $this->docCount = 0;
 
         // read segmentInfos
         for ($count = 0; $count < $segments; $count++) {
             $segName = $segmentsFile->readString();
             $segSize = $segmentsFile->readInt();
-            $this->_docCount += $segSize;
+            $this->docCount += $segSize;
 
-            $this->_segmentInfos[$segName] = new Index\SegmentInfo($this->_directory,
+            $this->segmentInfos[$segName] = new Index\SegmentInfo($this->directory,
                 $segName,
                 $segSize);
         }
@@ -293,7 +293,7 @@ class Index implements SearchIndexInterface
      */
     private function _readSegmentsFile(): void
     {
-        $segmentsFile = $this->_directory->getFileObject(self::getSegmentFileName($this->_generation));
+        $segmentsFile = $this->directory->getFileObject(self::getSegmentFileName($this->_generation));
 
         $format = $segmentsFile->readInt();
 
@@ -313,7 +313,7 @@ class Index implements SearchIndexInterface
 
         $segments = $segmentsFile->readInt();
 
-        $this->_docCount = 0;
+        $this->docCount = 0;
 
         // read segmentInfos
         for ($count = 0; $count < $segments; $count++) {
@@ -367,9 +367,9 @@ class Index implements SearchIndexInterface
                 $isCompound = true;
             }
 
-            $this->_docCount += $segSize;
+            $this->docCount += $segSize;
 
-            $this->_segmentInfos[$segName] = new Index\SegmentInfo($this->_directory,
+            $this->segmentInfos[$segName] = new Index\SegmentInfo($this->directory,
                 $segName,
                 $segSize,
                 $delGen,
@@ -430,15 +430,15 @@ class Index implements SearchIndexInterface
         $this->commit();
 
         // Release "under processing" flag
-        LockManager::releaseReadLock($this->_directory);
+        LockManager::releaseReadLock($this->directory);
 
         if ($this->_closeDirOnExit) {
-            $this->_directory->close();
+            $this->directory->close();
         }
 
-        $this->_directory = null;
+        $this->directory = null;
         $this->_writer = null;
-        $this->_segmentInfos = null;
+        $this->segmentInfos = null;
     }
 
     /**
@@ -465,8 +465,8 @@ class Index implements SearchIndexInterface
     private function _getIndexWriter(): Writer
     {
         if ($this->_writer === null) {
-            $this->_writer = new Index\Writer($this->_directory,
-                $this->_segmentInfos,
+            $this->_writer = new Index\Writer($this->directory,
+                $this->segmentInfos,
                 $this->_formatVersion);
         }
 
@@ -478,20 +478,20 @@ class Index implements SearchIndexInterface
      */
     private function _updateDocCount(): void
     {
-        $this->_docCount = 0;
-        foreach ($this->_segmentInfos as $segInfo) {
-            $this->_docCount += $segInfo->count();
+        $this->docCount = 0;
+        foreach ($this->segmentInfos as $segInfo) {
+            $this->docCount += $segInfo->count();
         }
     }
 
     /**
-     * Returns the Zend_Search_Lucene_Storage_Directory instance for this index.
+     * Returns the Zend_Search_Lucene_Storagedirectory instance for this index.
      *
      * @return DirectoryInterface
      */
     public function getDirectory()
     {
-        return $this->_directory;
+        return $this->directory;
     }
 
     /**
@@ -513,7 +513,7 @@ class Index implements SearchIndexInterface
      */
     public function count()
     {
-        return $this->_docCount;
+        return $this->docCount;
     }
 
     /**
@@ -525,7 +525,7 @@ class Index implements SearchIndexInterface
     {
         $numDocs = 0;
 
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $numDocs += $segmentInfo->numDocs();
         }
 
@@ -542,12 +542,12 @@ class Index implements SearchIndexInterface
      */
     public function isDeleted($id)
     {
-        if ($id >= $this->_docCount) {
+        if ($id >= $this->docCount) {
             throw new OutOfRangeException('Document id is out of the range.');
         }
 
         $segmentStartId = 0;
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             if ($segmentStartId + $segmentInfo->count() > $id) {
                 break;
             }
@@ -837,7 +837,7 @@ class Index implements SearchIndexInterface
     public function getFieldNames($indexed = false)
     {
         $result = [];
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $result = array_merge($result, $segmentInfo->getFields($indexed));
         }
         return $result;
@@ -859,12 +859,12 @@ class Index implements SearchIndexInterface
             $id = $id->id;
         }
 
-        if ($id >= $this->_docCount) {
+        if ($id >= $this->docCount) {
             throw new OutOfRangeException('Document id is out of the range.');
         }
 
         $segmentStartId = 0;
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             if ($segmentStartId + $segmentInfo->count() > $id) {
                 break;
             }
@@ -921,7 +921,7 @@ class Index implements SearchIndexInterface
      */
     public function hasTerm(Index\Term $term)
     {
-        foreach ($this->_segmentInfos as $segInfo) {
+        foreach ($this->segmentInfos as $segInfo) {
             if ($segInfo->getTermInfo($term) !== null) {
                 return true;
             }
@@ -943,7 +943,7 @@ class Index implements SearchIndexInterface
         $subResults = [];
         $segmentStartDocId = 0;
 
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $subResults[] = $segmentInfo->termDocs($term, $segmentStartDocId, $docsFilter);
 
             $segmentStartDocId += $segmentInfo->count();
@@ -980,7 +980,7 @@ class Index implements SearchIndexInterface
         $segmentStartDocId = 0;
         $result = new Index\DocsFilter();
 
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $subResults[] = $segmentInfo->termDocs($term, $segmentStartDocId, $docsFilter);
 
             $segmentStartDocId += $segmentInfo->count();
@@ -1014,7 +1014,7 @@ class Index implements SearchIndexInterface
     {
         $result = [];
         $segmentStartDocId = 0;
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $result += $segmentInfo->termFreqs($term, $segmentStartDocId, $docsFilter);
 
             $segmentStartDocId += $segmentInfo->count();
@@ -1036,7 +1036,7 @@ class Index implements SearchIndexInterface
     {
         $result = [];
         $segmentStartDocId = 0;
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $result += $segmentInfo->termPositions($term, $segmentStartDocId, $docsFilter);
 
             $segmentStartDocId += $segmentInfo->count();
@@ -1055,7 +1055,7 @@ class Index implements SearchIndexInterface
     public function docFreq(Index\Term $term)
     {
         $result = 0;
-        foreach ($this->_segmentInfos as $segInfo) {
+        foreach ($this->segmentInfos as $segInfo) {
             $termInfo = $segInfo->getTermInfo($term);
             if ($termInfo !== null) {
                 $result += $termInfo->docFreq;
@@ -1085,12 +1085,12 @@ class Index implements SearchIndexInterface
      */
     public function norm($id, $fieldName)
     {
-        if ($id >= $this->_docCount) {
+        if ($id >= $this->docCount) {
             return null;
         }
 
         $segmentStartId = 0;
-        foreach ($this->_segmentInfos as $segInfo) {
+        foreach ($this->segmentInfos as $segInfo) {
             if ($segmentStartId + $segInfo->count() > $id) {
                 break;
             }
@@ -1120,12 +1120,12 @@ class Index implements SearchIndexInterface
             $id = $id->id;
         }
 
-        if ($id >= $this->_docCount) {
+        if ($id >= $this->docCount) {
             throw new OutOfRangeException('Document id is out of the range.');
         }
 
         $segmentStartId = 0;
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             if ($segmentStartId + $segmentInfo->count() > $id) {
                 break;
             }
@@ -1145,7 +1145,7 @@ class Index implements SearchIndexInterface
     public function addDocument(Document $document)
     {
         $this->_getIndexWriter()->addDocument($document);
-        $this->_docCount++;
+        $this->docCount++;
 
         $this->_hasChanges = true;
     }
@@ -1160,7 +1160,7 @@ class Index implements SearchIndexInterface
         // Commit changes if any changes have been made
         $this->commit();
 
-        if (count($this->_segmentInfos) > 1 || $this->hasDeletions()) {
+        if (count($this->segmentInfos) > 1 || $this->hasDeletions()) {
             $this->_getIndexWriter()->optimize();
             $this->_updateDocCount();
         }
@@ -1173,7 +1173,7 @@ class Index implements SearchIndexInterface
      */
     public function hasDeletions()
     {
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             if ($segmentInfo->hasDeletions()) {
                 return true;
             }
@@ -1193,7 +1193,7 @@ class Index implements SearchIndexInterface
 
         $segmentInfoQueue = new Index\TermsPriorityQueue();
 
-        foreach ($this->_segmentInfos as $segmentInfo) {
+        foreach ($this->segmentInfos as $segmentInfo) {
             $segmentInfo->resetTermsStream();
 
             // Skip "empty" segments
@@ -1225,7 +1225,7 @@ class Index implements SearchIndexInterface
     public function resetTermsStream()
     {
         if ($this->_termsStream === null) {
-            $this->_termsStream = new TermStreamsPriorityQueue($this->_segmentInfos);
+            $this->_termsStream = new TermStreamsPriorityQueue($this->segmentInfos);
         } else {
             $this->_termsStream->resetTermsStream();
         }

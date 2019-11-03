@@ -34,13 +34,13 @@ class SegmentInfo implements TermsStreamInterface
      *
      * @var integer
      */
-    private $_docCount;
+    private $docCount;
     /**
      * Segment name
      *
      * @var string
      */
-    private $_name;
+    private $name;
     /**
      * Term Dictionary Index
      *
@@ -73,14 +73,14 @@ class SegmentInfo implements TermsStreamInterface
      *
      * @var array
      */
-    private $_fields;
+    private $fields;
     /**
      * Field positions in a dictionary.
      * (Term dictionary contains filelds ordered by names)
      *
      * @var array
      */
-    private $_fieldsDicPositions;
+    private $fieldsDicPositions;
     /**
      * Associative array where the key is the file name and the value is data offset
      * in a compound segment file (.csf).
@@ -126,7 +126,7 @@ class SegmentInfo implements TermsStreamInterface
      *
      * @var DirectoryInterface
      */
-    private $_directory;
+    private $directory;
     /**
      * Normalization factors.
      * An array fieldName => normVector
@@ -137,7 +137,7 @@ class SegmentInfo implements TermsStreamInterface
      *
      * @var array
      */
-    private $_norms = [];
+    private $norms = [];
 
     /*
      * Shared doc store options.
@@ -180,43 +180,43 @@ class SegmentInfo implements TermsStreamInterface
      *
      * @var FileInterface
      */
-    private $_tisFile = null;
+    private $tisFile = null;
     /**
      * Actual offset of the .tis file data
      *
      * @var integer
      */
-    private $_tisFileOffset;
+    private $tisFileOffset;
     /**
      * Frequencies File object for stream like terms reading
      *
      * @var FileInterface
      */
-    private $_frqFile = null;
+    private $frqFile = null;
     /**
      * Actual offset of the .frq file data
      *
      * @var integer
      */
-    private $_frqFileOffset;
+    private $frqFileOffset;
     /**
      * Positions File object for stream like terms reading
      *
      * @var FileInterface
      */
-    private $_prxFile = null;
+    private $prxFile = null;
     /**
      * Actual offset of the .prx file in the compound file
      *
      * @var integer
      */
-    private $_prxFileOffset;
+    private $prxFileOffset;
     /**
      * Actual number of terms in term stream
      *
      * @var integer
      */
-    private $_termCount = 0;
+    private $termCount = 0;
     /**
      * Overall number of terms in term stream
      *
@@ -294,16 +294,16 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function __construct(DirectoryInterface $directory, $name, $docCount, $delGen = 0, $docStoreOptions = null, $hasSingleNormFile = false, $isCompound = null)
     {
-        $this->_directory = $directory;
-        $this->_name = $name;
-        $this->_docCount = $docCount;
+        $this->directory = $directory;
+        $this->name = $name;
+        $this->docCount = $docCount;
 
         if ($docStoreOptions !== null) {
             $this->_usesSharedDocStore = true;
             $this->_sharedDocStoreOptions = $docStoreOptions;
 
             if ($docStoreOptions['isCompound']) {
-                $cfxFile = $this->_directory->getFileObject($docStoreOptions['segment'] . '.cfx');
+                $cfxFile = $this->directory->getFileObject($docStoreOptions['segment'] . '.cfx');
                 $cfxFilesCount = $cfxFile->readVInt();
 
                 $cfxFiles = [];
@@ -319,7 +319,7 @@ class SegmentInfo implements TermsStreamInterface
                     $cfxFiles[$fileName] = $dataOffset;
                 }
                 if ($count != 0) {
-                    $cfxFileSizes[$fileName] = $this->_directory->fileLength($docStoreOptions['segment'] . '.cfx') - $dataOffset;
+                    $cfxFileSizes[$fileName] = $this->directory->fileLength($docStoreOptions['segment'] . '.cfx') - $dataOffset;
                 }
 
                 $this->_sharedDocStoreOptions['files'] = $cfxFiles;
@@ -339,7 +339,7 @@ class SegmentInfo implements TermsStreamInterface
             // Detect if segment uses compound file
             try {
                 // Try to open compound file
-                $this->_directory->getFileObject($name . '.cfs');
+                $this->directory->getFileObject($name . '.cfs');
 
                 // Compound file is found
                 $this->_isCompound = true;
@@ -355,7 +355,7 @@ class SegmentInfo implements TermsStreamInterface
 
         $this->_segFiles = [];
         if ($this->_isCompound) {
-            $cfsFile = $this->_directory->getFileObject($name . '.cfs');
+            $cfsFile = $this->directory->getFileObject($name . '.cfs');
             $segFilesCount = $cfsFile->readVInt();
 
             for ($count = 0; $count < $segFilesCount; $count++) {
@@ -367,7 +367,7 @@ class SegmentInfo implements TermsStreamInterface
                 $this->_segFiles[$fileName] = $dataOffset;
             }
             if ($count != 0) {
-                $this->_segFileSizes[$fileName] = $this->_directory->fileLength($name . '.cfs') - $dataOffset;
+                $this->_segFileSizes[$fileName] = $this->directory->fileLength($name . '.cfs') - $dataOffset;
             }
         }
 
@@ -375,12 +375,12 @@ class SegmentInfo implements TermsStreamInterface
         $fieldsCount = $fnmFile->readVInt();
         $fieldNames = [];
         $fieldNums = [];
-        $this->_fields = [];
+        $this->fields = [];
 
         for ($count = 0; $count < $fieldsCount; $count++) {
             $fieldName = $fnmFile->readString();
             $fieldBits = $fnmFile->readByte();
-            $this->_fields[$count] = new FieldInfo($fieldName,
+            $this->fields[$count] = new FieldInfo($fieldName,
                 $fieldBits & 0x01 /* field is indexed */,
                 $count,
                 $fieldBits & 0x02 /* termvectors are stored */,
@@ -388,14 +388,14 @@ class SegmentInfo implements TermsStreamInterface
                 $fieldBits & 0x20 /* payloads are stored */);
             if ($fieldBits & 0x10) {
                 // norms are omitted for the indexed field
-                $this->_norms[$count] = str_repeat(chr(AbstractSimilarity::encodeNorm(1.0)), $docCount);
+                $this->norms[$count] = str_repeat(chr(AbstractSimilarity::encodeNorm(1.0)), $docCount);
             }
 
             $fieldNums[$count] = $count;
             $fieldNames[$count] = $fieldName;
         }
         array_multisort($fieldNames, SORT_ASC, SORT_REGULAR, $fieldNums);
-        $this->_fieldsDicPositions = array_flip($fieldNums);
+        $this->fieldsDicPositions = array_flip($fieldNums);
 
         if ($this->_delGen == -2) {
             // SegmentInfo constructor is invoked from index writer
@@ -423,7 +423,7 @@ class SegmentInfo implements TermsStreamInterface
             $fdtFName = $this->_sharedDocStoreOptions['segment'] . '.fdt';
 
             if (!$this->_sharedDocStoreOptions['isCompound']) {
-                $fdxFile = $this->_directory->getFileObject($fdxFName, $shareHandler);
+                $fdxFile = $this->directory->getFileObject($fdxFName, $shareHandler);
                 $fdxFile->seek($this->_sharedDocStoreOptions['offset'] * 8, SEEK_CUR);
 
                 if ($extension == '.fdx') {
@@ -434,7 +434,7 @@ class SegmentInfo implements TermsStreamInterface
 // '.fdt' file is requested
                 $fdtStartOffset = $fdxFile->readLong();
 
-                $fdtFile = $this->_directory->getFileObject($fdtFName, $shareHandler);
+                $fdtFile = $this->directory->getFileObject($fdtFName, $shareHandler);
                 $fdtFile->seek($fdtStartOffset, SEEK_CUR);
 
                 return $fdtFile;
@@ -450,7 +450,7 @@ class SegmentInfo implements TermsStreamInterface
             }
 
             // Open shared docstore segment file
-            $cfxFile = $this->_directory->getFileObject($this->_sharedDocStoreOptions['segment'] . '.cfx', $shareHandler);
+            $cfxFile = $this->directory->getFileObject($this->_sharedDocStoreOptions['segment'] . '.cfx', $shareHandler);
             // Seek to the start of '.fdx' file within compound file
             $cfxFile->seek($this->_sharedDocStoreOptions['files'][$fdxFName]);
             // Seek to the start of current segment documents section
@@ -472,10 +472,10 @@ class SegmentInfo implements TermsStreamInterface
             return $fdtFile;
         }
 
-        $filename = $this->_name . $extension;
+        $filename = $this->name . $extension;
 
         if (!$this->_isCompound) {
-            return $this->_directory->getFileObject($filename, $shareHandler);
+            return $this->directory->getFileObject($filename, $shareHandler);
         }
 
         if (!isset($this->_segFiles[$filename])) {
@@ -483,7 +483,7 @@ class SegmentInfo implements TermsStreamInterface
                 . $filename . ' file.');
         }
 
-        $file = $this->_directory->getFileObject($this->_name . '.cfs', $shareHandler);
+        $file = $this->directory->getFileObject($this->name . '.cfs', $shareHandler);
         $file->seek($this->_segFiles[$filename]);
         return $file;
     }
@@ -500,12 +500,12 @@ class SegmentInfo implements TermsStreamInterface
     private function _detectLatestDelGen(): ?int
     {
         $delFileList = [];
-        foreach ($this->_directory->fileList() as $file) {
-            if ($file == $this->_name . '.del') {
-                // Matches <segment_name>.del file name
+        foreach ($this->directory->fileList() as $file) {
+            if ($file == $this->name . '.del') {
+                // Matches <segmentname>.del file name
                 $delFileList[] = 0;
-            } else if (preg_match('/^' . $this->_name . '_([a-zA-Z0-9]+)\.del$/i', $file, $matches)) {
-                // Matches <segment_name>_NNN.del file names
+            } else if (preg_match('/^' . $this->name . '_([a-zA-Z0-9]+)\.del$/i', $file, $matches)) {
+                // Matches <segmentname>_NNN.del file names
                 $delFileList[] = (int)base_convert($matches[1], 36, 10);
             }
         }
@@ -558,7 +558,7 @@ class SegmentInfo implements TermsStreamInterface
         try {
             // '.del' files always stored in a separate file
             // Segment compound is not used
-            $delFile = $this->_directory->getFileObject($this->_name . '.del');
+            $delFile = $this->directory->getFileObject($this->name . '.del');
 
             $byteCount = $delFile->readInt();
             $byteCount = ceil($byteCount / 8);
@@ -605,7 +605,7 @@ class SegmentInfo implements TermsStreamInterface
      */
     private function _load21DelFile()
     {
-        $delFile = $this->_directory->getFileObject($this->_name . '_' . base_convert($this->_delGen, 10, 36) . '.del');
+        $delFile = $this->directory->getFileObject($this->name . '_' . base_convert($this->_delGen, 10, 36) . '.del');
 
         $format = $delFile->readInt();
 
@@ -619,7 +619,7 @@ class SegmentInfo implements TermsStreamInterface
             $byteCount = $delFile->readInt();
             $bitCount = $delFile->readInt();
 
-            $delFileSize = $this->_directory->fileLength($this->_name . '_' . base_convert($this->_delGen, 10, 36) . '.del');
+            $delFileSize = $this->directory->fileLength($this->name . '_' . base_convert($this->_delGen, 10, 36) . '.del');
             $byteNum = 0;
 
             do {
@@ -684,7 +684,7 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function getField($fieldNum): FieldInfo
     {
-        return $this->_fields[$fieldNum];
+        return $this->fields[$fieldNum];
     }
 
     /**
@@ -698,7 +698,7 @@ class SegmentInfo implements TermsStreamInterface
     public function getFields($indexed = false): array
     {
         $result = [];
-        foreach ($this->_fields as $field) {
+        foreach ($this->fields as $field) {
             if ((!$indexed) || $field->isIndexed) {
                 $result[$field->name] = $field->name;
             }
@@ -713,7 +713,7 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function getFieldInfos(): array
     {
-        return $this->_fields;
+        return $this->fields;
     }
 
     /**
@@ -733,7 +733,7 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function count(): int
     {
-        return $this->_docCount;
+        return $this->docCount;
     }
 
     /**
@@ -744,10 +744,10 @@ class SegmentInfo implements TermsStreamInterface
     public function numDocs(): ?int
     {
         if ($this->hasDeletions()) {
-            return $this->_docCount - $this->_deletedCount();
+            return $this->docCount - $this->_deletedCount();
         }
 
-        return $this->_docCount;
+        return $this->docCount;
     }
 
     /**
@@ -785,7 +785,7 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function getName(): string
     {
-        return $this->_name;
+        return $this->name;
     }
 
     /**
@@ -804,7 +804,7 @@ class SegmentInfo implements TermsStreamInterface
 
         if (!$termInfo instanceof TermInfo) {
             if ($docsFilter !== null && $docsFilter instanceof DocsFilter) {
-                $docsFilter->segmentFilters[$this->_name] = [];
+                $docsFilter->segmentFilters[$this->name] = [];
             }
             return [];
         }
@@ -815,18 +815,18 @@ class SegmentInfo implements TermsStreamInterface
         $result = [];
 
         if ($docsFilter !== null) {
-            if (isset($docsFilter->segmentFilters[$this->_name])) {
+            if (isset($docsFilter->segmentFilters[$this->name])) {
                 // Filter already has some data for the current segment
 
                 // Make short name for the filter (which doesn't need additional dereferencing)
-                $filter = &$docsFilter->segmentFilters[$this->_name];
+                $filter = &$docsFilter->segmentFilters[$this->name];
 
                 // Check if filter is not empty
                 if (count($filter) == 0) {
                     return [];
                 }
 
-                if ($this->_docCount / count($filter) < self::FULL_SCAN_VS_FETCH_BOUNDARY) {
+                if ($this->docCount / count($filter) < self::FULL_SCAN_VS_FETCH_BOUNDARY) {
                     // Perform fetching
 // ---------------------------------------------------------------
                     $updatedFilterData = [];
@@ -846,7 +846,7 @@ class SegmentInfo implements TermsStreamInterface
                             $updatedFilterData[$docId] = 1; // 1 is just a some constant value, so we don't need additional var dereference here
                         }
                     }
-                    $docsFilter->segmentFilters[$this->_name] = $updatedFilterData;
+                    $docsFilter->segmentFilters[$this->name] = $updatedFilterData;
 // ---------------------------------------------------------------
                 } else {
                     // Perform full scan
@@ -867,7 +867,7 @@ class SegmentInfo implements TermsStreamInterface
                             $updatedFilterData[$docId] = 1; // 1 is just a some constant value, so we don't need additional var dereference here
                         }
                     }
-                    $docsFilter->segmentFilters[$this->_name] = $updatedFilterData;
+                    $docsFilter->segmentFilters[$this->name] = $updatedFilterData;
                 }
             } else {
                 // Filter is present, but doesn't has data for the current segment yet
@@ -885,7 +885,7 @@ class SegmentInfo implements TermsStreamInterface
                     $result[] = $shift + $docId;
                     $filterData[$docId] = 1; // 1 is just a some constant value, so we don't need additional var dereference here
                 }
-                $docsFilter->segmentFilters[$this->_name] = $filterData;
+                $docsFilter->segmentFilters[$this->name] = $filterData;
             }
         } else {
             for ($count = 0; $count < $termInfo->docFreq; $count++) {
@@ -1046,10 +1046,10 @@ class SegmentInfo implements TermsStreamInterface
     private function _loadDictionaryIndex(): void
     {
         // Check, if index is already serialized
-        if ($this->_directory->fileExists($this->_name . '.sti')) {
+        if ($this->directory->fileExists($this->name . '.sti')) {
             // Load serialized dictionary index data
-            $stiFile = $this->_directory->getFileObject($this->_name . '.sti');
-            $stiFileData = $stiFile->readBytes($this->_directory->fileLength($this->_name . '.sti'));
+            $stiFile = $this->directory->getFileObject($this->name . '.sti');
+            $stiFileData = $stiFile->readBytes($this->directory->fileLength($this->name . '.sti'));
 
             // Load dictionary index data
             if (($unserializedData = @unserialize($stiFileData)) !== false) {
@@ -1069,7 +1069,7 @@ class SegmentInfo implements TermsStreamInterface
             DictionaryLoader::load($tiiFileData);
 
         $stiFileData = serialize([$this->_termDictionary, $this->_termDictionaryInfos]);
-        $stiFile = $this->_directory->createFile($this->_name . '.sti');
+        $stiFile = $this->directory->createFile($this->name . '.sti');
         $stiFile->writeBytes($stiFileData);
     }
 
@@ -1087,7 +1087,7 @@ class SegmentInfo implements TermsStreamInterface
             $filename = $this->_sharedDocStoreOptions['segment'] . $extension;
 
             if (!$this->_sharedDocStoreOptions['isCompound']) {
-                return $this->_directory->fileLength($filename);
+                return $this->directory->fileLength($filename);
             }
 
             if (!isset($this->_sharedDocStoreOptions['fileSizes'][$filename])) {
@@ -1099,11 +1099,11 @@ class SegmentInfo implements TermsStreamInterface
         }
 
 
-        $filename = $this->_name . $extension;
+        $filename = $this->name . $extension;
 
         // Try to get common file first
-        if ($this->_directory->fileExists($filename)) {
-            return $this->_directory->fileLength($filename);
+        if ($this->directory->fileExists($filename)) {
+            return $this->directory->fileLength($filename);
         }
 
         if (!isset($this->_segFileSizes[$filename])) {
@@ -1123,7 +1123,7 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function getFieldNum($fieldName): int
     {
-        foreach ($this->_fields as $field) {
+        foreach ($this->fields as $field) {
             if ($field->name == $fieldName) {
                 return $field->number;
             }
@@ -1142,7 +1142,7 @@ class SegmentInfo implements TermsStreamInterface
     private function _getFieldPosition($fieldNum): int
     {
         // Treat values which are not in a translation table as a 'direct value'
-        return $this->_fieldsDicPositions[$fieldNum] ?? $fieldNum;
+        return $this->fieldsDicPositions[$fieldNum] ?? $fieldNum;
     }
 
     private function _cleanUpTermInfoCache(): void
@@ -1174,7 +1174,7 @@ class SegmentInfo implements TermsStreamInterface
 
         if (!$termInfo instanceof TermInfo) {
             if ($docsFilter !== null && $docsFilter instanceof DocsFilter) {
-                $docsFilter->segmentFilters[$this->_name] = [];
+                $docsFilter->segmentFilters[$this->name] = [];
             }
             return [];
         }
@@ -1187,11 +1187,11 @@ class SegmentInfo implements TermsStreamInterface
         $result = [];
 
         if ($docsFilter !== null) {
-            if (isset($docsFilter->segmentFilters[$this->_name])) {
+            if (isset($docsFilter->segmentFilters[$this->name])) {
                 // Filter already has some data for the current segment
 
                 // Make short name for the filter (which doesn't need additional dereferencing)
-                $filter = &$docsFilter->segmentFilters[$this->_name];
+                $filter = &$docsFilter->segmentFilters[$this->name];
 
                 // Check if filter is not empty
                 if (count($filter) == 0) {
@@ -1199,7 +1199,7 @@ class SegmentInfo implements TermsStreamInterface
                 }
 
 
-                if ($this->_docCount / count($filter) < self::FULL_SCAN_VS_FETCH_BOUNDARY) {
+                if ($this->docCount / count($filter) < self::FULL_SCAN_VS_FETCH_BOUNDARY) {
                     // Perform fetching
 // ---------------------------------------------------------------
                     $updatedFilterData = [];
@@ -1220,7 +1220,7 @@ class SegmentInfo implements TermsStreamInterface
                             }
                         }
                     }
-                    $docsFilter->segmentFilters[$this->_name] = $updatedFilterData;
+                    $docsFilter->segmentFilters[$this->name] = $updatedFilterData;
 // ---------------------------------------------------------------
                 } else {
                     // Perform full scan
@@ -1242,7 +1242,7 @@ class SegmentInfo implements TermsStreamInterface
                             }
                         }
                     }
-                    $docsFilter->segmentFilters[$this->_name] = $updatedFilterData;
+                    $docsFilter->segmentFilters[$this->name] = $updatedFilterData;
                 }
             } else {
                 // Filter doesn't has data for current segment
@@ -1261,7 +1261,7 @@ class SegmentInfo implements TermsStreamInterface
                     }
                 }
 
-                $docsFilter->segmentFilters[$this->_name] = $filterData;
+                $docsFilter->segmentFilters[$this->name] = $filterData;
             }
         } else {
             for ($count = 0; $count < $termInfo->docFreq; $count++) {
@@ -1295,7 +1295,7 @@ class SegmentInfo implements TermsStreamInterface
 
         if (!$termInfo instanceof TermInfo) {
             if ($docsFilter !== null && $docsFilter instanceof DocsFilter) {
-                $docsFilter->segmentFilters[$this->_name] = [];
+                $docsFilter->segmentFilters[$this->name] = [];
             }
             return [];
         }
@@ -1308,18 +1308,18 @@ class SegmentInfo implements TermsStreamInterface
 
 
         if ($docsFilter !== null) {
-            if (isset($docsFilter->segmentFilters[$this->_name])) {
+            if (isset($docsFilter->segmentFilters[$this->name])) {
                 // Filter already has some data for the current segment
 
                 // Make short name for the filter (which doesn't need additional dereferencing)
-                $filter = &$docsFilter->segmentFilters[$this->_name];
+                $filter = &$docsFilter->segmentFilters[$this->name];
 
                 // Check if filter is not empty
                 if (count($filter) == 0) {
                     return [];
                 }
 
-                if ($this->_docCount / count($filter) < self::FULL_SCAN_VS_FETCH_BOUNDARY) {
+                if ($this->docCount / count($filter) < self::FULL_SCAN_VS_FETCH_BOUNDARY) {
                     // Perform fetching
 // ---------------------------------------------------------------
                     for ($count = 0; $count < $termInfo->docFreq; $count++) {
@@ -1355,7 +1355,7 @@ class SegmentInfo implements TermsStreamInterface
                         }
                     }
 
-                    $docsFilter->segmentFilters[$this->_name] = $updatedFilterData;
+                    $docsFilter->segmentFilters[$this->name] = $updatedFilterData;
 // ---------------------------------------------------------------
                 } else {
                     // Perform full scan
@@ -1392,7 +1392,7 @@ class SegmentInfo implements TermsStreamInterface
                         }
                     }
 
-                    $docsFilter->segmentFilters[$this->_name] = $updatedFilterData;
+                    $docsFilter->segmentFilters[$this->name] = $updatedFilterData;
                 }
             } else {
                 // Filter doesn't has data for current segment
@@ -1425,7 +1425,7 @@ class SegmentInfo implements TermsStreamInterface
                     $result[$shift + $docId] = $positions;
                 }
 
-                $docsFilter->segmentFilters[$this->_name] = $filterData;
+                $docsFilter->segmentFilters[$this->name] = $filterData;
             }
         } else {
             for ($count = 0; $count < $termInfo->docFreq; $count++) {
@@ -1470,15 +1470,15 @@ class SegmentInfo implements TermsStreamInterface
     {
         $fieldNum = $this->getFieldNum($fieldName);
 
-        if (!($this->_fields[$fieldNum]->isIndexed)) {
+        if (!($this->fields[$fieldNum]->isIndexed)) {
             return null;
         }
 
-        if (!isset($this->_norms[$fieldNum])) {
+        if (!isset($this->norms[$fieldNum])) {
             $this->_loadNorm($fieldNum);
         }
 
-        return AbstractSimilarity::decodeNorm(ord($this->_norms[$fieldNum][$id]));
+        return AbstractSimilarity::decodeNorm(ord($this->norms[$fieldNum][$id]));
     }
 
     /**
@@ -1500,14 +1500,14 @@ class SegmentInfo implements TermsStreamInterface
                 throw new InvalidFileFormatException('Wrong norms file format.');
             }
 
-            foreach ($this->_fields as $fNum => $fieldInfo) {
+            foreach ($this->fields as $fNum => $fieldInfo) {
                 if ($fieldInfo->isIndexed) {
-                    $this->_norms[$fNum] = $normfFile->readBytes($this->_docCount);
+                    $this->norms[$fNum] = $normfFile->readBytes($this->docCount);
                 }
             }
         } else {
             $fFile = $this->openCompoundFile('.f' . $fieldNum);
-            $this->_norms[$fieldNum] = $fFile->readBytes($this->_docCount);
+            $this->norms[$fieldNum] = $fFile->readBytes($this->docCount);
         }
     }
 
@@ -1522,18 +1522,18 @@ class SegmentInfo implements TermsStreamInterface
     {
         $fieldNum = $this->getFieldNum($fieldName);
 
-        if ($fieldNum == -1 || !($this->_fields[$fieldNum]->isIndexed)) {
+        if ($fieldNum == -1 || !($this->fields[$fieldNum]->isIndexed)) {
             $similarity = AbstractSimilarity::getDefault();
 
             return str_repeat(chr($similarity->encodeNorm($similarity->lengthNorm($fieldName, 0))),
-                $this->_docCount);
+                $this->docCount);
         }
 
-        if (!isset($this->_norms[$fieldNum])) {
+        if (!isset($this->norms[$fieldNum])) {
             $this->_loadNorm($fieldNum);
         }
 
-        return $this->_norms[$fieldNum];
+        return $this->norms[$fieldNum];
     }
 
     /**
@@ -1611,7 +1611,7 @@ class SegmentInfo implements TermsStreamInterface
                 return;
             } else {
                 throw new RuntimeException(
-                    'Delete file processing workflow is corrupted for the segment \'' . $this->_name . '\'.'
+                    'Delete file processing workflow is corrupted for the segment \'' . $this->name . '\'.'
                 );
             }
         }
@@ -1633,7 +1633,7 @@ class SegmentInfo implements TermsStreamInterface
             $delBytes = $this->_deleted;
             $bitCount = count(bitset_to_array($delBytes));
         } else {
-            $byteCount = floor($this->_docCount / 8) + 1;
+            $byteCount = floor($this->docCount / 8) + 1;
             $delBytes = str_repeat(chr(0), $byteCount);
             for ($count = 0; $count < $byteCount; $count++) {
                 $byte = 0;
@@ -1655,8 +1655,8 @@ class SegmentInfo implements TermsStreamInterface
             $this->_delGen++;
         }
 
-        $delFile = $this->_directory->createFile($this->_name . '_' . base_convert($this->_delGen, 10, 36) . '.del');
-        $delFile->writeInt($this->_docCount);
+        $delFile = $this->directory->createFile($this->name . '_' . base_convert($this->_delGen, 10, 36) . '.del');
+        $delFile->writeInt($this->docCount);
         $delFile->writeInt($bitCount);
         $delFile->writeBytes($delBytes);
 
@@ -1701,32 +1701,32 @@ class SegmentInfo implements TermsStreamInterface
             $mode = self::SM_TERMS_ONLY;
         }
 
-        if ($this->_tisFile !== null) {
-            $this->_tisFile = null;
+        if ($this->tisFile !== null) {
+            $this->tisFile = null;
         }
 
-        $this->_tisFile = $this->openCompoundFile('.tis', false);
-        $this->_tisFileOffset = $this->_tisFile->tell();
+        $this->tisFile = $this->openCompoundFile('.tis', false);
+        $this->tisFileOffset = $this->tisFile->tell();
 
-        $tiVersion = $this->_tisFile->readInt();
+        $tiVersion = $this->tisFile->readInt();
         if ($tiVersion != (int)0xFFFFFFFE /* pre-2.1 format */ &&
             $tiVersion != (int)0xFFFFFFFD /* 2.1+ format    */) {
             throw new InvalidFileFormatException('Wrong TermInfoFile file format');
         }
 
-        $this->_termCount =
-        $this->_termNum = $this->_tisFile->readLong();       // Read terms count
-        $this->_indexInterval = $this->_tisFile->readInt();  // Read Index interval
-        $this->_skipInterval = $this->_tisFile->readInt();   // Read skip interval
+        $this->termCount =
+        $this->_termNum = $this->tisFile->readLong();       // Read terms count
+        $this->_indexInterval = $this->tisFile->readInt();  // Read Index interval
+        $this->_skipInterval = $this->tisFile->readInt();   // Read skip interval
         if ($tiVersion == (int)0xFFFFFFFD /* 2.1+ format */) {
-            $maxSkipLevels = $this->_tisFile->readInt();
+            $maxSkipLevels = $this->tisFile->readInt();
         }
 
-        if ($this->_frqFile !== null) {
-            $this->_frqFile = null;
+        if ($this->frqFile !== null) {
+            $this->frqFile = null;
         }
-        if ($this->_prxFile !== null) {
-            $this->_prxFile = null;
+        if ($this->prxFile !== null) {
+            $this->prxFile = null;
         }
         $this->_docMap = [];
 
@@ -1744,13 +1744,13 @@ class SegmentInfo implements TermsStreamInterface
             case self::SM_FULL_INFO:
                 // break intentionally omitted
             case self::SM_MERGE_INFO:
-                $this->_frqFile = $this->openCompoundFile('.frq', false);
-                $this->_frqFileOffset = $this->_frqFile->tell();
+                $this->frqFile = $this->openCompoundFile('.frq', false);
+                $this->frqFileOffset = $this->frqFile->tell();
 
-                $this->_prxFile = $this->openCompoundFile('.prx', false);
-                $this->_prxFileOffset = $this->_prxFile->tell();
+                $this->prxFile = $this->openCompoundFile('.prx', false);
+                $this->prxFileOffset = $this->prxFile->tell();
 
-                for ($count = 0; $count < $this->_docCount; $count++) {
+                for ($count = 0; $count < $this->docCount; $count++) {
                     if (!$this->isDeleted($count)) {
                         $this->_docMap[$count] = $startId + (($mode == self::SM_MERGE_INFO) ? count($this->_docMap) : $count);
                     }
@@ -1763,7 +1763,7 @@ class SegmentInfo implements TermsStreamInterface
         }
 
         // Calculate next segment start id (since $this->_docMap structure may be cleaned by $this->nextTerm() call)
-        $nextSegmentStartId = $startId + (($mode == self::SM_MERGE_INFO) ? count($this->_docMap) : $this->_docCount);
+        $nextSegmentStartId = $startId + (($mode == self::SM_MERGE_INFO) ? count($this->_docMap) : $this->docCount);
         $this->nextTerm();
 
         return $nextSegmentStartId;
@@ -1797,32 +1797,32 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function nextTerm()
     {
-        if ($this->_tisFile === null || $this->_termCount == 0) {
+        if ($this->tisFile === null || $this->termCount == 0) {
             $this->_lastTerm = null;
             $this->_lastTermInfo = null;
             $this->_lastTermPositions = null;
             $this->_docMap = null;
 
             // may be necessary for "empty" segment
-            $this->_tisFile = null;
-            $this->_frqFile = null;
-            $this->_prxFile = null;
+            $this->tisFile = null;
+            $this->frqFile = null;
+            $this->prxFile = null;
 
             return null;
         }
 
-        $termPrefixLength = $this->_tisFile->readVInt();
-        $termSuffix = $this->_tisFile->readString();
-        $termFieldNum = $this->_tisFile->readVInt();
+        $termPrefixLength = $this->tisFile->readVInt();
+        $termSuffix = $this->tisFile->readString();
+        $termFieldNum = $this->tisFile->readVInt();
         $termValue = Term::getPrefix($this->_lastTerm->text, $termPrefixLength) . $termSuffix;
 
-        $this->_lastTerm = new Term($termValue, $this->_fields[$termFieldNum]->name);
+        $this->_lastTerm = new Term($termValue, $this->fields[$termFieldNum]->name);
 
-        $docFreq = $this->_tisFile->readVInt();
-        $freqPointer = $this->_lastTermInfo->freqPointer + $this->_tisFile->readVInt();
-        $proxPointer = $this->_lastTermInfo->proxPointer + $this->_tisFile->readVInt();
+        $docFreq = $this->tisFile->readVInt();
+        $freqPointer = $this->_lastTermInfo->freqPointer + $this->tisFile->readVInt();
+        $proxPointer = $this->_lastTermInfo->proxPointer + $this->tisFile->readVInt();
         if ($docFreq >= $this->_skipInterval) {
-            $skipOffset = $this->_tisFile->readVInt();
+            $skipOffset = $this->tisFile->readVInt();
         } else {
             $skipOffset = 0;
         }
@@ -1833,27 +1833,27 @@ class SegmentInfo implements TermsStreamInterface
         if ($this->_termsScanMode == self::SM_FULL_INFO || $this->_termsScanMode == self::SM_MERGE_INFO) {
             $this->_lastTermPositions = [];
 
-            $this->_frqFile->seek($this->_lastTermInfo->freqPointer + $this->_frqFileOffset, SEEK_SET);
+            $this->frqFile->seek($this->_lastTermInfo->freqPointer + $this->frqFileOffset, SEEK_SET);
             $freqs = [];
             $docId = 0;
             for ($count = 0; $count < $this->_lastTermInfo->docFreq; $count++) {
-                $docDelta = $this->_frqFile->readVInt();
+                $docDelta = $this->frqFile->readVInt();
                 if ($docDelta % 2 == 1) {
                     $docId += ($docDelta - 1) / 2;
                     $freqs[$docId] = 1;
                 } else {
                     $docId += $docDelta / 2;
-                    $freqs[$docId] = $this->_frqFile->readVInt();
+                    $freqs[$docId] = $this->frqFile->readVInt();
                 }
             }
 
-            $this->_prxFile->seek($this->_lastTermInfo->proxPointer + $this->_prxFileOffset, SEEK_SET);
+            $this->prxFile->seek($this->_lastTermInfo->proxPointer + $this->prxFileOffset, SEEK_SET);
             foreach ($freqs as $docId => $freq) {
                 $termPosition = 0;
                 $positions = [];
 
                 for ($count = 0; $count < $freq; $count++) {
-                    $termPosition += $this->_prxFile->readVInt();
+                    $termPosition += $this->prxFile->readVInt();
                     $positions[] = $termPosition;
                 }
 
@@ -1863,11 +1863,11 @@ class SegmentInfo implements TermsStreamInterface
             }
         }
 
-        $this->_termCount--;
-        if ($this->_termCount == 0) {
-            $this->_tisFile = null;
-            $this->_frqFile = null;
-            $this->_prxFile = null;
+        $this->termCount--;
+        if ($this->termCount == 0) {
+            $this->tisFile = null;
+            $this->frqFile = null;
+            $this->prxFile = null;
         }
 
         return $this->_lastTerm;
@@ -1893,9 +1893,9 @@ class SegmentInfo implements TermsStreamInterface
              * Field is not presented in this segment
              * Go to the end of dictionary
              */
-            $this->_tisFile = null;
-            $this->_frqFile = null;
-            $this->_prxFile = null;
+            $this->tisFile = null;
+            $this->frqFile = null;
+            $this->prxFile = null;
 
             $this->_lastTerm = null;
             $this->_lastTermInfo = null;
@@ -1931,9 +1931,9 @@ class SegmentInfo implements TermsStreamInterface
 
         if ($highIndex == -1) {
             // Term is out of the dictionary range
-            $this->_tisFile = null;
-            $this->_frqFile = null;
-            $this->_prxFile = null;
+            $this->tisFile = null;
+            $this->frqFile = null;
+            $this->prxFile = null;
 
             $this->_lastTerm = null;
             $this->_lastTermInfo = null;
@@ -1946,25 +1946,25 @@ class SegmentInfo implements TermsStreamInterface
         $prevTerm = $this->_termDictionary[$prevPosition];
         $prevTermInfo = $this->_termDictionaryInfos[$prevPosition];
 
-        if ($this->_tisFile === null) {
+        if ($this->tisFile === null) {
             // The end of terms stream is reached and terms dictionary file is closed
             // Perform mini-reset operation
-            $this->_tisFile = $this->openCompoundFile('.tis', false);
+            $this->tisFile = $this->openCompoundFile('.tis', false);
 
             if ($this->_termsScanMode == self::SM_FULL_INFO || $this->_termsScanMode == self::SM_MERGE_INFO) {
-                $this->_frqFile = $this->openCompoundFile('.frq', false);
-                $this->_prxFile = $this->openCompoundFile('.prx', false);
+                $this->frqFile = $this->openCompoundFile('.frq', false);
+                $this->prxFile = $this->openCompoundFile('.prx', false);
             }
         }
-        $this->_tisFile->seek($this->_tisFileOffset + $prevTermInfo[4], SEEK_SET);
+        $this->tisFile->seek($this->tisFileOffset + $prevTermInfo[4], SEEK_SET);
 
         $this->_lastTerm = new Term($prevTerm[1] /* text */,
-            ($prevTerm[0] == -1) ? '' : $this->_fields[$prevTerm[0] /* field */]->name);
+            ($prevTerm[0] == -1) ? '' : $this->fields[$prevTerm[0] /* field */]->name);
         $this->_lastTermInfo = new TermInfo($prevTermInfo[0] /* docFreq */,
             $prevTermInfo[1] /* freqPointer */,
             $prevTermInfo[2] /* proxPointer */,
             $prevTermInfo[3] /* skipOffset */);
-        $this->_termCount = $this->_termNum - $prevPosition * $this->_indexInterval;
+        $this->termCount = $this->_termNum - $prevPosition * $this->_indexInterval;
 
         if ($highIndex == 0) {
             // skip start entry
@@ -1975,27 +1975,27 @@ class SegmentInfo implements TermsStreamInterface
             if ($this->_termsScanMode == self::SM_FULL_INFO || $this->_termsScanMode == self::SM_MERGE_INFO) {
                 $this->_lastTermPositions = [];
 
-                $this->_frqFile->seek($this->_lastTermInfo->freqPointer + $this->_frqFileOffset, SEEK_SET);
+                $this->frqFile->seek($this->_lastTermInfo->freqPointer + $this->frqFileOffset, SEEK_SET);
                 $freqs = [];
                 $docId = 0;
                 for ($count = 0; $count < $this->_lastTermInfo->docFreq; $count++) {
-                    $docDelta = $this->_frqFile->readVInt();
+                    $docDelta = $this->frqFile->readVInt();
                     if ($docDelta % 2 == 1) {
                         $docId += ($docDelta - 1) / 2;
                         $freqs[$docId] = 1;
                     } else {
                         $docId += $docDelta / 2;
-                        $freqs[$docId] = $this->_frqFile->readVInt();
+                        $freqs[$docId] = $this->frqFile->readVInt();
                     }
                 }
 
-                $this->_prxFile->seek($this->_lastTermInfo->proxPointer + $this->_prxFileOffset, SEEK_SET);
+                $this->prxFile->seek($this->_lastTermInfo->proxPointer + $this->prxFileOffset, SEEK_SET);
                 foreach ($freqs as $docId => $freq) {
                     $termPosition = 0;
                     $positions = [];
 
                     for ($count = 0; $count < $freq; $count++) {
-                        $termPosition += $this->_prxFile->readVInt();
+                        $termPosition += $this->prxFile->readVInt();
                         $positions[] = $termPosition;
                     }
 
@@ -2027,9 +2027,9 @@ class SegmentInfo implements TermsStreamInterface
      */
     public function closeTermsStream()
     {
-        $this->_tisFile = null;
-        $this->_frqFile = null;
-        $this->_prxFile = null;
+        $this->tisFile = null;
+        $this->frqFile = null;
+        $this->prxFile = null;
 
         $this->_lastTerm = null;
         $this->_lastTermInfo = null;

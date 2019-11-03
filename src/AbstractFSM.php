@@ -39,7 +39,7 @@ abstract class AbstractFSM
      *
      * @var array
      */
-    private $_inputAphabet = [];
+    private $inputAphabet = [];
 
     /**
      * State transition table
@@ -78,7 +78,7 @@ abstract class AbstractFSM
      *
      * @var array
      */
-    private $_inputActions = [];
+    private $inputActions = [];
 
     /**
      * List of input actions
@@ -168,7 +168,7 @@ abstract class AbstractFSM
      */
     public function addInputSymbol($inputSymbol): void
     {
-        $this->_inputAphabet[$inputSymbol] = $inputSymbol;
+        $this->inputAphabet[$inputSymbol] = $inputSymbol;
     }
 
     /**
@@ -209,7 +209,7 @@ abstract class AbstractFSM
         if (!isset($this->_states[$targetState])) {
             throw new Exception\InvalidArgumentException('Undefined target state (' . $targetState . ').');
         }
-        if (!isset($this->_inputAphabet[$input])) {
+        if (!isset($this->inputAphabet[$input])) {
             throw new Exception\InvalidArgumentException('Undefined input symbol (' . $input . ').');
         }
 
@@ -244,18 +244,18 @@ abstract class AbstractFSM
         if (!isset($this->_states[$state])) {
             throw new Exception\InvalidArgumentException('Undefined state (' . $state . ').');
         }
-        if (!isset($this->_inputAphabet[$inputSymbol])) {
+        if (!isset($this->inputAphabet[$inputSymbol])) {
             throw new Exception\InvalidArgumentException('Undefined input symbol (' . $inputSymbol . ').');
         }
 
-        if (!isset($this->_inputActions[$state])) {
-            $this->_inputActions[$state] = [];
+        if (!isset($this->inputActions[$state])) {
+            $this->inputActions[$state] = [];
         }
-        if (!isset($this->_inputActions[$state][$inputSymbol])) {
-            $this->_inputActions[$state][$inputSymbol] = [];
+        if (!isset($this->inputActions[$state][$inputSymbol])) {
+            $this->inputActions[$state][$inputSymbol] = [];
         }
 
-        $this->_inputActions[$state][$inputSymbol][] = $action;
+        $this->inputActions[$state][$inputSymbol][] = $action;
     }
 
     /**
@@ -387,8 +387,8 @@ abstract class AbstractFSM
                 $action->doAction();
             }
         }
-        if (isset($this->_inputActions[$sourceState][$input])) {
-            foreach ($this->_inputActions[$sourceState][$input] as $action) {
+        if (isset($this->inputActions[$sourceState][$input])) {
+            foreach ($this->inputActions[$sourceState][$input] as $action) {
                 $action->doAction();
             }
         }

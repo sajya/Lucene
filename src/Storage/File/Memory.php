@@ -25,7 +25,7 @@ class Memory extends AbstractFile
      *
      * @var integer
      */
-    private $_position = 0;
+    private $position = 0;
 
 
     /**
@@ -59,16 +59,16 @@ class Memory extends AbstractFile
     {
         switch ($whence) {
             case SEEK_SET:
-                $this->_position = $offset;
+                $this->position = $offset;
                 break;
 
             case SEEK_CUR:
-                $this->_position += $offset;
+                $this->position += $offset;
                 break;
 
             case SEEK_END:
-                $this->_position = strlen($this->_data);
-                $this->_position += $offset;
+                $this->position = strlen($this->_data);
+                $this->position += $offset;
                 break;
 
             default:
@@ -83,7 +83,7 @@ class Memory extends AbstractFile
      */
     public function tell()
     {
-        return $this->_position;
+        return $this->position;
     }
 
     /**
@@ -134,7 +134,7 @@ class Memory extends AbstractFile
      */
     public function readByte()
     {
-        return ord($this->_data[$this->_position++]);
+        return ord($this->_data[$this->position++]);
     }
 
     /**
@@ -148,7 +148,7 @@ class Memory extends AbstractFile
         // Only append operation is supported now
 
         $this->_data .= chr($byte);
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
 
         return 1;
     }
@@ -163,8 +163,8 @@ class Memory extends AbstractFile
      */
     public function readBytes($num)
     {
-        $returnValue = substr($this->_data, $this->_position, $num);
-        $this->_position += $num;
+        $returnValue = substr($this->_data, $this->position, $num);
+        $this->position += $num;
 
         return $returnValue;
     }
@@ -187,7 +187,7 @@ class Memory extends AbstractFile
             $this->_data .= $data;
         }
 
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
     }
 
     /**
@@ -203,8 +203,8 @@ class Memory extends AbstractFile
          * fseek() uses long for offset. Thus, largest index segment file size in 32bit mode is 2Gb
          */
         if (PHP_INT_SIZE > 4) {
-            $str = substr($this->_data, $this->_position, 8);
-            $this->_position += 8;
+            $str = substr($this->_data, $this->position, 8);
+            $this->position += 8;
 
             return ord($str[0]) << 56 |
                 ord($str[1]) << 48 |
@@ -265,8 +265,8 @@ class Memory extends AbstractFile
      */
     public function readInt()
     {
-        $str = substr($this->_data, $this->_position, 4);
-        $this->_position += 4;
+        $str = substr($this->_data, $this->position, 4);
+        $this->position += 4;
 
         return ord($str[0]) << 24 |
             ord($str[1]) << 16 |
@@ -302,7 +302,7 @@ class Memory extends AbstractFile
             $this->_writeLong32Bit($value);
         }
 
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
     }
 
     /**
@@ -355,7 +355,7 @@ class Memory extends AbstractFile
             chr($value >> 8 & 0xFF) .
             chr($value & 0xFF);
 
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
     }
 
     /**
@@ -384,8 +384,8 @@ class Memory extends AbstractFile
          * characters.
          */
 
-        $str_val = substr($this->_data, $this->_position, $strlen);
-        $this->_position += $strlen;
+        $str_val = substr($this->_data, $this->position, $strlen);
+        $this->position += $strlen;
 
         for ($count = 0; $count < $strlen; $count++) {
             if ((ord($str_val[$count]) & 0xC0) == 0xC0) {
@@ -398,8 +398,8 @@ class Memory extends AbstractFile
                         $addBytes++;
                     }
                 }
-                $str_val .= substr($this->_data, $this->_position, $addBytes);
-                $this->_position += $addBytes;
+                $str_val .= substr($this->_data, $this->position, $addBytes);
+                $this->position += $addBytes;
                 $strlen += $addBytes;
 
                 // Check for null character. Java2 encodes null character
@@ -425,11 +425,11 @@ class Memory extends AbstractFile
      */
     public function readVInt()
     {
-        $nextByte = ord($this->_data[$this->_position++]);
+        $nextByte = ord($this->_data[$this->position++]);
         $val = $nextByte & 0x7F;
 
         for ($shift = 7; ($nextByte & 0x80) != 0; $shift += 7) {
-            $nextByte = ord($this->_data[$this->_position++]);
+            $nextByte = ord($this->_data[$this->position++]);
             $val |= ($nextByte & 0x7F) << $shift;
         }
         return $val;
@@ -504,7 +504,7 @@ class Memory extends AbstractFile
             $this->_data .= $str;
         }
 
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
     }
 
     /**
@@ -524,7 +524,7 @@ class Memory extends AbstractFile
         }
         $this->_data .= chr($value);
 
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
     }
 
     /**
@@ -536,8 +536,8 @@ class Memory extends AbstractFile
     public function readBinary()
     {
         $length = $this->readVInt();
-        $returnValue = substr($this->_data, $this->_position, $length);
-        $this->_position += $length;
+        $returnValue = substr($this->_data, $this->position, $length);
+        $this->position += $length;
         return $returnValue;
     }
 
@@ -551,8 +551,8 @@ class Memory extends AbstractFile
      */
     protected function _fread($length = 1): string
     {
-        $returnValue = substr($this->_data, $this->_position, $length);
-        $this->_position += $length;
+        $returnValue = substr($this->_data, $this->position, $length);
+        $this->position += $length;
         return $returnValue;
     }
 
@@ -574,6 +574,6 @@ class Memory extends AbstractFile
             $this->_data .= $data;
         }
 
-        $this->_position = strlen($this->_data);
+        $this->position = strlen($this->_data);
     }
 }

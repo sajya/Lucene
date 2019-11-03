@@ -21,7 +21,7 @@ class DictionaryLoader
     /**
      * Dictionary index loader.
      *
-     * It takes a string which is actually <segment_name>.tii index file data and
+     * It takes a string which is actually <segmentname>.tii index file data and
      * returns two arrays - term and tremInfo lists.
      *
      * See Zend_Search_Lucene_Index_SegmintInfo class for details

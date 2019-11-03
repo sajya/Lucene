@@ -73,7 +73,7 @@ class QueryParserContext
      *
      * @var string
      */
-    private $_encoding;
+    private $encoding;
 
 
     /**
@@ -84,7 +84,7 @@ class QueryParserContext
      */
     public function __construct($encoding, $defaultField = null)
     {
-        $this->_encoding = $encoding;
+        $this->encoding = $encoding;
         $this->_defaultField = $defaultField;
     }
 
@@ -308,12 +308,12 @@ class QueryParserContext
         foreach ($conjuctions as $conjuction) {
             // Check, if it's a one term conjuction
             if (count($conjuction) == 1) {
-                $subqueries[] = $conjuction[0][0]->getQuery($this->_encoding);
+                $subqueries[] = $conjuction[0][0]->getQuery($this->encoding);
             } else {
                 $subquery = new Query\Boolean();
 
                 foreach ($conjuction as $conjuctionEntry) {
-                    $subquery->addSubquery($conjuctionEntry[0]->getQuery($this->_encoding), $conjuctionEntry[1]);
+                    $subquery->addSubquery($conjuctionEntry[0]->getQuery($this->encoding), $conjuctionEntry[1]);
                 }
 
                 $subqueries[] = $subquery;
@@ -357,7 +357,7 @@ class QueryParserContext
 
         foreach ($this->_entries as $entryId => $entry) {
             $sign = $this->_signs[$entryId] ?? $defaultSign;
-            $query->addSubquery($entry->getQuery($this->_encoding), $sign);
+            $query->addSubquery($entry->getQuery($this->encoding), $sign);
         }
 
         return $query;

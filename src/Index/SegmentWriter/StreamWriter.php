@@ -30,19 +30,19 @@ class StreamWriter extends AbstractSegmentWriter
      */
     public function createStoredFieldsFiles(): void
     {
-        $this->_fdxFile = $this->_directory->createFile($this->_name . '.fdx');
-        $this->_fdtFile = $this->_directory->createFile($this->_name . '.fdt');
+        $this->fdxFile = $this->directory->createFile($this->name . '.fdx');
+        $this->fdtFile = $this->directory->createFile($this->name . '.fdt');
 
-        $this->_files[] = $this->_name . '.fdx';
-        $this->_files[] = $this->_name . '.fdt';
+        $this->files[] = $this->name . '.fdx';
+        $this->files[] = $this->name . '.fdt';
     }
 
     public function addNorm($fieldName, $normVector): void
     {
-        if (isset($this->_norms[$fieldName])) {
-            $this->_norms[$fieldName] .= $normVector;
+        if (isset($this->norms[$fieldName])) {
+            $this->norms[$fieldName] .= $normVector;
         } else {
-            $this->_norms[$fieldName] = $normVector;
+            $this->norms[$fieldName] = $normVector;
         }
     }
 
@@ -53,16 +53,16 @@ class StreamWriter extends AbstractSegmentWriter
      */
     public function close()
     {
-        if ($this->_docCount == 0) {
+        if ($this->docCount == 0) {
             return null;
         }
 
         $this->_dumpFNM();
         $this->_generateCFS();
 
-        return new SegmentInfo($this->_directory,
-            $this->_name,
-            $this->_docCount,
+        return new SegmentInfo($this->directory,
+            $this->name,
+            $this->docCount,
             -1,
             null,
             true,

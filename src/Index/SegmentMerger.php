@@ -27,14 +27,14 @@ class SegmentMerger
      *
      * @var integer
      */
-    private $_docCount;
+    private $docCount;
 
     /**
      * A set of segments to be merged
      *
      * @var array|SegmentInfo
      */
-    private $_segmentInfos = [];
+    private $segmentInfos = [];
 
     /**
      * Flag to signal, that merge is already done
@@ -45,11 +45,11 @@ class SegmentMerger
 
     /**
      * Field map
-     * [<segment_name>][<field_number>] => <target_field_number>
+     * [<segmentname>][<field_number>] => <target_field_number>
      *
      * @var array
      */
-    private $_fieldsMap = [];
+    private $fieldsMap = [];
 
 
     /**
@@ -75,7 +75,7 @@ class SegmentMerger
      */
     public function addSource(SegmentInfo $segmentInfo): void
     {
-        $this->_segmentInfos[$segmentInfo->getName()] = $segmentInfo;
+        $this->segmentInfos[$segmentInfo->getName()] = $segmentInfo;
     }
 
 
@@ -93,9 +93,9 @@ class SegmentMerger
             throw new RuntimeException('Merge is already done.');
         }
 
-        if (count($this->_segmentInfos) < 1) {
+        if (count($this->segmentInfos) < 1) {
             throw new RuntimeException('Wrong number of segments to be merged ('
-                . count($this->_segmentInfos)
+                . count($this->segmentInfos)
                 . ').');
         }
 
@@ -115,9 +115,9 @@ class SegmentMerger
      */
     private function _mergeFields(): void
     {
-        foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+        foreach ($this->segmentInfos as $segName => $segmentInfo) {
             foreach ($segmentInfo->getFieldInfos() as $fieldInfo) {
-                $this->_fieldsMap[$segName][$fieldInfo->number] = $this->_writer->addFieldInfo($fieldInfo);
+                $this->fieldsMap[$segName][$fieldInfo->number] = $this->_writer->addFieldInfo($fieldInfo);
             }
         }
     }
@@ -129,7 +129,7 @@ class SegmentMerger
     {
         foreach ($this->_writer->getFieldInfos() as $fieldInfo) {
             if ($fieldInfo->isIndexed) {
-                foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+                foreach ($this->segmentInfos as $segName => $segmentInfo) {
                     if ($segmentInfo->hasDeletions()) {
                         $srcNorm = $segmentInfo->normVector($fieldInfo->name);
                         $norm = '';
@@ -153,9 +153,9 @@ class SegmentMerger
      */
     private function _mergeStoredFields(): void
     {
-        $this->_docCount = 0;
+        $this->docCount = 0;
 
-        foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+        foreach ($this->segmentInfos as $segName => $segmentInfo) {
             $fdtFile = $segmentInfo->openCompoundFile('.fdt');
 
             for ($count = 0; $count < $segmentInfo->count(); $count++) {
@@ -188,7 +188,7 @@ class SegmentMerger
                 }
 
                 if (!$segmentInfo->isDeleted($count)) {
-                    $this->_docCount++;
+                    $this->docCount++;
                     $this->_writer->addStoredFields($storedFields);
                 }
             }
@@ -204,7 +204,7 @@ class SegmentMerger
         $segmentInfoQueue = new TermsPriorityQueue();
 
         $segmentStartId = 0;
-        foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+        foreach ($this->segmentInfos as $segName => $segmentInfo) {
             $segmentStartId = $segmentInfo->resetTermsStream($segmentStartId, SegmentInfo::SM_MERGE_INFO);
 
             // Skip "empty" segments

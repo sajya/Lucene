@@ -16,24 +16,24 @@ class Text extends AbstractCommon
      *
      * @var integer
      */
-    private $_position;
+    private $position;
 
     /**
      * Reset token stream
      */
     public function reset()
     {
-        $this->_position = 0;
+        $this->position = 0;
 
-        if ($this->_input === null) {
+        if ($this->input === null) {
             return;
         }
 
         // convert input into ascii
         if (PHP_OS != 'AIX') {
-            $this->_input = iconv($this->_encoding, 'ASCII//TRANSLIT', $this->_input);
+            $this->input = iconv($this->encoding, 'ASCII//TRANSLIT', $this->input);
         }
-        $this->_encoding = 'ASCII';
+        $this->encoding = 'ASCII';
     }
 
     /**
@@ -45,13 +45,13 @@ class Text extends AbstractCommon
      */
     public function nextToken()
     {
-        if ($this->_input === null) {
+        if ($this->input === null) {
             return null;
         }
 
 
         do {
-            if (!preg_match('/[a-zA-Z]+/', $this->_input, $match, PREG_OFFSET_CAPTURE, $this->_position)) {
+            if (!preg_match('/[a-zA-Z]+/', $this->input, $match, PREG_OFFSET_CAPTURE, $this->position)) {
                 // It covers both cases a) there are no matches (preg_match(...) === 0)
                 // b) error occured (preg_match(...) === FALSE)
                 return null;
@@ -61,7 +61,7 @@ class Text extends AbstractCommon
             $pos = $match[0][1];
             $endpos = $pos + strlen($str);
 
-            $this->_position = $endpos;
+            $this->position = $endpos;
 
             $token = $this->normalize(new Token($str, $pos, $endpos));
         } while ($token === null); // try again if token is skipped

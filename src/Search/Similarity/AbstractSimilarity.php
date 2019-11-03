@@ -21,7 +21,7 @@ abstract class AbstractSimilarity
      *
      * @var AbstractSimilarity
      */
-    private static $_defaultImpl;
+    private static $defaultImpl;
 
     /**
      * Cache of decoded bytes.
@@ -295,7 +295,7 @@ abstract class AbstractSimilarity
      */
     public static function setDefault(AbstractSimilarity $similarity): void
     {
-        self::$_defaultImpl = $similarity;
+        self::$defaultImpl = $similarity;
     }
 
 
@@ -307,11 +307,11 @@ abstract class AbstractSimilarity
      */
     public static function getDefault(): AbstractSimilarity
     {
-        if (!self::$_defaultImpl instanceof self) {
-            self::$_defaultImpl = new DefaultSimilarity();
+        if (!self::$defaultImpl instanceof self) {
+            self::$defaultImpl = new DefaultSimilarity();
         }
 
-        return self::$_defaultImpl;
+        return self::$defaultImpl;
     }
 
     /**

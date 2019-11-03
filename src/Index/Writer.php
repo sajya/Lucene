@@ -22,7 +22,7 @@ class Writer
 {
     /**
      * @todo Implement AnalyzerInterface substitution
-     * @todo Implement Zend_Search_Lucene_Storage_DirectoryRAM and Zend_Search_Lucene_Storage_FileRAM to use it for
+     * @todo Implement Zend_Search_Lucene_StoragedirectoryRAM and Zend_Search_Lucene_Storage_FileRAM to use it for
      *       temporary index files
      * @todo DirectoryInterface lock processing
      */
@@ -95,14 +95,14 @@ class Writer
      *
      * @var DirectoryInterface
      */
-    private $_directory = null;
+    private $directory = null;
 
     /**
      * Changes counter.
      *
      * @var integer
      */
-    private $_versionUpdate = 0;
+    private $versionUpdate = 0;
 
     /**
      * List of the segments, created by index writer
@@ -110,7 +110,7 @@ class Writer
      *
      * @var array
      */
-    private $_newSegments = [];
+    private $newSegments = [];
 
     /**
      * List of segments to be deleted on commit
@@ -124,16 +124,16 @@ class Writer
      *
      * @var DocumentWriter
      */
-    private $_currentSegment = null;
+    private $currentSegment = null;
 
     /**
      * Array of Zend_Search_Lucene_Index_SegmentInfo objects for this index.
      *
-     * It's a reference to the corresponding Zend_Search_Lucene::$_segmentInfos array
+     * It's a reference to the corresponding Zend_Search_Lucene::$segmentInfos array
      *
      * @var array|SegmentInfo
      */
-    private $_segmentInfos;
+    private $segmentInfos;
 
     /**
      * Index target format version
@@ -152,8 +152,8 @@ class Writer
      */
     public function __construct(DirectoryInterface $directory, &$segmentInfos, $targetFormatVersion)
     {
-        $this->_directory = $directory;
-        $this->_segmentInfos = &$segmentInfos;
+        $this->directory = $directory;
+        $this->segmentInfos = &$segmentInfos;
         $this->_targetFormatVersion = $targetFormatVersion;
     }
 
@@ -172,7 +172,7 @@ class Writer
                 if ($file == 'deletable' ||
                     $file == 'segments' ||
                     isset(self::$_indexExtensions[substr($file, strlen($file) - 4)]) ||
-                    preg_match('/\.f\d+$/i', $file) /* matches <segment_name>.f<decimal_nmber> file names */) {
+                    preg_match('/\.f\d+$/i', $file) /* matches <segmentname>.f<decimal_nmber> file names */) {
                     $directory->deleteFile($file);
                 }
             }
@@ -219,19 +219,17 @@ class Writer
      */
     public function addDocument(Document $document): void
     {
-        if ($this->_currentSegment === null) {
-            $this->_currentSegment =
-                new SegmentWriter\DocumentWriter($this->_directory, $this->_newSegmentName());
-        }
-        $this->_currentSegment->addDocument($document);
+        $this->currentSegment = $this->currentSegment ?? new SegmentWriter\DocumentWriter($this->directory, $this->newSegmentName());
 
-        if ($this->_currentSegment->count() >= $this->maxBufferedDocs) {
+        $this->currentSegment->addDocument($document);
+
+        if ($this->currentSegment->count() >= $this->maxBufferedDocs) {
             $this->commit();
         }
 
-        $this->_maybeMergeSegments();
+        $this->maybeMergeSegments();
 
-        $this->_versionUpdate++;
+        $this->versionUpdate++;
     }
 
     /**
@@ -239,12 +237,12 @@ class Writer
      *
      * @return string
      */
-    private function _newSegmentName(): string
+    private function newSegmentName(): string
     {
-        Lucene\LockManager::obtainWriteLock($this->_directory);
+        Lucene\LockManager::obtainWriteLock($this->directory);
 
-        $generation = Lucene\Index::getActualGeneration($this->_directory);
-        $segmentsFile = $this->_directory->getFileObject(Lucene\Index::getSegmentFileName($generation), false);
+        $generation = Lucene\Index::getActualGeneration($this->directory);
+        $segmentsFile = $this->directory->getFileObject(Lucene\Index::getSegmentFileName($generation), false);
 
         $segmentsFile->seek(12); // 12 = 4 (int, file format marker) + 8 (long, index version)
         $segmentNameCounter = $segmentsFile->readInt();
@@ -256,7 +254,7 @@ class Writer
         // return (which calls $segmentsFile destructor)
         $segmentsFile->flush();
 
-        Lucene\LockManager::releaseWriteLock($this->_directory);
+        Lucene\LockManager::releaseWriteLock($this->directory);
 
         return '_' . base_convert($segmentNameCounter, 10, 36);
     }
@@ -266,15 +264,18 @@ class Writer
      */
     public function commit(): void
     {
-        if ($this->_currentSegment !== null) {
-            $newSegment = $this->_currentSegment->close();
-            if ($newSegment !== null) {
-                $this->_newSegments[$newSegment->getName()] = $newSegment;
-            }
-            $this->_currentSegment = null;
+        if ($this->currentSegment === null) {
+            $this->_updateSegments();
+            return;
         }
 
-        $this->_updateSegments();
+        $newSegment = $this->currentSegment->close();
+
+        if ($newSegment !== null) {
+            $this->newSegments[$newSegment->getName()] = $newSegment;
+        }
+
+        $this->currentSegment = null;
     }
 
     /**
@@ -286,23 +287,23 @@ class Writer
     private function _updateSegments(): void
     {
         // Get an exclusive index lock
-        Lucene\LockManager::obtainWriteLock($this->_directory);
+        Lucene\LockManager::obtainWriteLock($this->directory);
 
         // Write down changes for the segments
-        foreach ($this->_segmentInfos as $segInfo) {
+        foreach ($this->segmentInfos as $segInfo) {
             $segInfo->writeChanges();
         }
 
 
-        $generation = Lucene\Index::getActualGeneration($this->_directory);
-        $segmentsFile = $this->_directory->getFileObject(Lucene\Index::getSegmentFileName($generation), false);
-        $newSegmentFile = $this->_directory->createFile(Lucene\Index::getSegmentFileName(++$generation), false);
+        $generation = Lucene\Index::getActualGeneration($this->directory);
+        $segmentsFile = $this->directory->getFileObject(Lucene\Index::getSegmentFileName($generation), false);
+        $newSegmentFile = $this->directory->createFile(Lucene\Index::getSegmentFileName(++$generation), false);
 
         try {
-            $genFile = $this->_directory->getFileObject('segments.gen', false);
+            $genFile = $this->directory->getFileObject('segments.gen', false);
         } catch (ExceptionInterface $e) {
             if (strpos($e->getMessage(), 'is not readable') !== false) {
-                $genFile = $this->_directory->createFile('segments.gen');
+                $genFile = $this->directory->createFile('segments.gen');
             } else {
                 throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
             }
@@ -332,8 +333,8 @@ class Writer
                 throw new InvalidFileFormatException('Unsupported segments file format');
             }
 
-            $version = $segmentsFile->readLong() + $this->_versionUpdate;
-            $this->_versionUpdate = 0;
+            $version = $segmentsFile->readLong() + $this->versionUpdate;
+            $this->versionUpdate = 0;
             $newSegmentFile->writeLong($version);
 
             // Write segment name counter
@@ -393,7 +394,7 @@ class Writer
 
                 if (!in_array($segName, $this->_segmentsToDelete)) {
                     // Load segment if necessary
-                    if (!isset($this->_segmentInfos[$segName])) {
+                    if (!isset($this->segmentInfos[$segName])) {
                         if ($isCompoundByte == 0xFF) {
                             // The segment is not a compound file
                             $isCompound = false;
@@ -405,8 +406,8 @@ class Writer
                             $isCompound = true;
                         }
 
-                        $this->_segmentInfos[$segName] =
-                            new SegmentInfo($this->_directory,
+                        $this->segmentInfos[$segName] =
+                            new SegmentInfo($this->directory,
                                 $segName,
                                 $segSize,
                                 $delGen,
@@ -415,7 +416,7 @@ class Writer
                                 $isCompound);
                     } else {
                         // Retrieve actual deletions file generation number
-                        $delGen = $this->_segmentInfos[$segName]->getDelGen();
+                        $delGen = $this->segmentInfos[$segName]->getDelGen();
                     }
 
                     $newSegmentFile->writeString($segName);
@@ -432,7 +433,7 @@ class Writer
                         }
                     } else if ($docStoreOptions !== null) {
                         // Release index write lock
-                        Lucene\LockManager::releaseWriteLock($this->_directory);
+                        Lucene\LockManager::releaseWriteLock($this->directory);
 
                         throw new RuntimeException('Index conversion to lower format version is not supported.');
                     }
@@ -451,9 +452,9 @@ class Writer
             }
             $segmentsFile->close();
 
-            $segmentsCount = count($segments) + count($this->_newSegments);
+            $segmentsCount = count($segments) + count($this->newSegments);
 
-            foreach ($this->_newSegments as $segName => $segmentInfo) {
+            foreach ($this->newSegments as $segName => $segmentInfo) {
                 $newSegmentFile->writeString($segName);
                 $newSegmentFile->writeInt($segmentInfo->count());
 
@@ -472,9 +473,9 @@ class Writer
                 $newSegmentFile->writeByte($segmentInfo->isCompound() ? 1 : -1);
 
                 $segments[$segmentInfo->getName()] = $segmentInfo->count();
-                $this->_segmentInfos[$segName] = $segmentInfo;
+                $this->segmentInfos[$segName] = $segmentInfo;
             }
-            $this->_newSegments = [];
+            $this->newSegments = [];
 
             $newSegmentFile->seek($numOfSegmentsOffset);
             $newSegmentFile->writeInt($segmentsCount);  // Update segments count
@@ -488,7 +489,7 @@ class Writer
             $genFile->writeLong($generation);
 
             // Release index write lock
-            Lucene\LockManager::releaseWriteLock($this->_directory);
+            Lucene\LockManager::releaseWriteLock($this->directory);
 
             // Throw the exception
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
@@ -500,7 +501,7 @@ class Writer
 
         // Check if another update or read process is not running now
         // If yes, skip clean-up procedure
-        if (Lucene\LockManager::escalateReadLock($this->_directory)) {
+        if (Lucene\LockManager::escalateReadLock($this->directory)) {
             /**
              * Clean-up directory
              */
@@ -513,7 +514,7 @@ class Writer
             // only last should not be deleted
             $delFiles = [];
 
-            foreach ($this->_directory->fileList() as $file) {
+            foreach ($this->directory->fileList() as $file) {
                 if ($file == 'deletable') {
                     // 'deletable' file
                     $filesToDelete[] = $file;
@@ -533,7 +534,7 @@ class Writer
                         $filesNumbers[] = (int)base_convert(substr($file, 9), 36, 10); // ordered by segment generation numbers
                     }
                 } else if (preg_match('/(^_([a-zA-Z0-9]+))\.f\d+$/i', $file, $matches)) {
-                    // one of per segment files ('<segment_name>.f<decimal_number>')
+                    // one of per segment files ('<segmentname>.f<decimal_number>')
                     // Check if it's not one of the segments in the current segments set
                     if (!isset($segments[$matches[1]])) {
                         $filesToDelete[] = $file;
@@ -541,7 +542,7 @@ class Writer
                         $filesNumbers[] = (int)base_convert($matches[2], 36, 10); // order by segment number
                     }
                 } else if (preg_match('/(^_([a-zA-Z0-9]+))(_([a-zA-Z0-9]+))\.del$/i', $file, $matches)) {
-                    // one of per segment files ('<segment_name>_<del_generation>.del' where <segment_name> is '_<segment_number>')
+                    // one of per segment files ('<segmentname>_<del_generation>.del' where <segmentname> is '_<segment_number>')
                     // Check if it's not one of the segments in the current segments set
                     if (!isset($segments[$matches[1]])) {
                         $filesToDelete[] = $file;
@@ -556,11 +557,11 @@ class Writer
                         $delFiles[$segmentNumber][$delGeneration] = $file;
                     }
                 } else if (isset(self::$_indexExtensions[substr($file, strlen($file) - 4)])) {
-                    // one of per segment files ('<segment_name>.<ext>')
+                    // one of per segment files ('<segmentname>.<ext>')
                     $segmentName = substr($file, 0, -4);
                     // Check if it's not one of the segments in the current segments set
                     if (!isset($segments[$segmentName]) &&
-                        ($this->_currentSegment === null || $this->_currentSegment->getName() != $segmentName)) {
+                        ($this->currentSegment === null || $this->currentSegment->getName() != $segmentName)) {
                         $filesToDelete[] = $file;
                         $filesTypes[] = 3;                                                                               // second group of files for deletions
                         $filesNumbers[] = (int)base_convert(substr($file, 1 /* skip '_' */, -4), 36, 10);                // order by segment number
@@ -598,7 +599,7 @@ class Writer
                     /** Skip shared docstore segments deleting */
                     /** @todo Process '.cfx' files to check if them are already unused */
                     if (substr($file, strlen($file) - 4) != '.cfx') {
-                        $this->_directory->deleteFile($file);
+                        $this->directory->deleteFile($file);
                     }
                 } catch (ExceptionInterface $e) {
                     if (strpos($e->getMessage(), 'Can\'t delete file') === false) {
@@ -610,12 +611,12 @@ class Writer
             }
 
             // Return read lock into the previous state
-            Lucene\LockManager::deEscalateReadLock($this->_directory);
+            Lucene\LockManager::deEscalateReadLock($this->directory);
         } else {
             // Only release resources if another index reader is running now
             foreach ($this->_segmentsToDelete as $segName) {
                 foreach (self::$_indexExtensions as $ext) {
-                    $this->_directory->purgeFile($segName . $ext);
+                    $this->directory->purgeFile($segName . $ext);
                 }
             }
         }
@@ -625,12 +626,12 @@ class Writer
 
 
         // Release index write lock
-        Lucene\LockManager::releaseWriteLock($this->_directory);
+        Lucene\LockManager::releaseWriteLock($this->directory);
 
         // Remove unused segments from segments list
-        foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+        foreach ($this->segmentInfos as $segName => $segmentInfo) {
             if (!isset($segments[$segName])) {
-                unset($this->_segmentInfos[$segName]);
+                unset($this->segmentInfos[$segName]);
             }
         }
     }
@@ -638,14 +639,14 @@ class Writer
     /**
      * Merge segments if necessary
      */
-    private function _maybeMergeSegments(): void
+    private function maybeMergeSegments(): void
     {
-        if (Lucene\LockManager::obtainOptimizationLock($this->_directory) === false) {
+        if (Lucene\LockManager::obtainOptimizationLock($this->directory) === false) {
             return;
         }
 
         if (!$this->_hasAnythingToMerge()) {
-            Lucene\LockManager::releaseOptimizationLock($this->_directory);
+            Lucene\LockManager::releaseOptimizationLock($this->directory);
             return;
         }
 
@@ -663,7 +664,7 @@ class Writer
 
         // Perform standard auto-optimization procedure
         $segmentSizes = [];
-        foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+        foreach ($this->segmentInfos as $segName => $segmentInfo) {
             $segmentSizes[$segName] = $segmentInfo->count();
         }
 
@@ -684,12 +685,12 @@ class Writer
                 $sizeToMerge *= $this->mergeFactor;
 
                 if ($sizeToMerge > $this->maxMergeDocs) {
-                    Lucene\LockManager::releaseOptimizationLock($this->_directory);
+                    Lucene\LockManager::releaseOptimizationLock($this->directory);
                     return;
                 }
             }
 
-            $mergePool[] = $this->_segmentInfos[$segName];
+            $mergePool[] = $this->segmentInfos[$segName];
             $poolSize += $size;
         }
 
@@ -697,7 +698,7 @@ class Writer
             $this->_mergeSegments($mergePool);
         }
 
-        Lucene\LockManager::releaseOptimizationLock($this->_directory);
+        Lucene\LockManager::releaseOptimizationLock($this->directory);
     }
 
     /**
@@ -708,7 +709,7 @@ class Writer
     private function _hasAnythingToMerge(): bool
     {
         $segmentSizes = [];
-        foreach ($this->_segmentInfos as $segName => $segmentInfo) {
+        foreach ($this->segmentInfos as $segName => $segmentInfo) {
             $segmentSizes[$segName] = $segmentInfo->count();
         }
 
@@ -733,7 +734,7 @@ class Writer
                 }
             }
 
-            $mergePool[] = $this->_segmentInfos[$segName];
+            $mergePool[] = $this->segmentInfos[$segName];
             $poolSize += $size;
         }
 
@@ -749,9 +750,9 @@ class Writer
      */
     private function _mergeSegments($segments): void
     {
-        $newName = $this->_newSegmentName();
+        $newName = $this->newSegmentName();
 
-        $merger = new SegmentMerger($this->_directory,
+        $merger = new SegmentMerger($this->directory,
             $newName);
         foreach ($segments as $segmentInfo) {
             $merger->addSource($segmentInfo);
@@ -760,7 +761,7 @@ class Writer
 
         $newSegment = $merger->merge();
         if ($newSegment !== null) {
-            $this->_newSegments[$newSegment->getName()] = $newSegment;
+            $this->newSegments[$newSegment->getName()] = $newSegment;
         }
 
         $this->commit();
@@ -790,7 +791,7 @@ class Writer
      */
     public function optimize(): bool
     {
-        if (Lucene\LockManager::obtainOptimizationLock($this->_directory) === false) {
+        if (Lucene\LockManager::obtainOptimizationLock($this->directory) === false) {
             return false;
         }
 
@@ -806,9 +807,9 @@ class Writer
         // That's guaranteed by the serialisation of _updateSegments() execution using exclusive locks.
         $this->_updateSegments();
 
-        $this->_mergeSegments($this->_segmentInfos);
+        $this->_mergeSegments($this->segmentInfos);
 
-        Lucene\LockManager::releaseOptimizationLock($this->_directory);
+        Lucene\LockManager::releaseOptimizationLock($this->directory);
 
         return true;
     }

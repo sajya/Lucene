@@ -89,13 +89,13 @@ class DocumentWriter extends AbstractSegmentWriter
                             // New term
                             $this->_termDictionary[$termKey] = $term;
                             $this->_termDocs[$termKey] = [];
-                            $this->_termDocs[$termKey][$this->_docCount] = [];
-                        } else if (!isset($this->_termDocs[$termKey][$this->_docCount])) {
+                            $this->_termDocs[$termKey][$this->docCount] = [];
+                        } else if (!isset($this->_termDocs[$termKey][$this->docCount])) {
                             // Existing term, but new term entry
-                            $this->_termDocs[$termKey][$this->_docCount] = [];
+                            $this->_termDocs[$termKey][$this->docCount] = [];
                         }
                         $position += $token->getPositionIncrement();
-                        $this->_termDocs[$termKey][$this->_docCount][] = $position;
+                        $this->_termDocs[$termKey][$this->docCount][] = $position;
                     }
 
                     if ($tokenCounter == 0) {
@@ -120,12 +120,12 @@ class DocumentWriter extends AbstractSegmentWriter
                         // New term
                         $this->_termDictionary[$termKey] = $term;
                         $this->_termDocs[$termKey] = [];
-                        $this->_termDocs[$termKey][$this->_docCount] = [];
-                    } else if (!isset($this->_termDocs[$termKey][$this->_docCount])) {
+                        $this->_termDocs[$termKey][$this->docCount] = [];
+                    } else if (!isset($this->_termDocs[$termKey][$this->docCount])) {
                         // Existing term, but new term entry
-                        $this->_termDocs[$termKey][$this->_docCount] = [];
+                        $this->_termDocs[$termKey][$this->docCount] = [];
                     }
-                    $this->_termDocs[$termKey][$this->_docCount][] = 0; // position
+                    $this->_termDocs[$termKey][$this->docCount][] = 0; // position
 
                     $docNorms[$field->name] = chr($similarity->encodeNorm($similarity->lengthNorm($field->name, 1) *
                         $document->boost *
@@ -140,20 +140,20 @@ class DocumentWriter extends AbstractSegmentWriter
             $this->addField($field);
         }
 
-        foreach ($this->_fields as $fieldName => $field) {
+        foreach ($this->fields as $fieldName => $field) {
             if (!$field->isIndexed) {
                 continue;
             }
 
-            if (!isset($this->_norms[$fieldName])) {
-                $this->_norms[$fieldName] = str_repeat(chr($similarity->encodeNorm($similarity->lengthNorm($fieldName, 0))),
-                    $this->_docCount);
+            if (!isset($this->norms[$fieldName])) {
+                $this->norms[$fieldName] = str_repeat(chr($similarity->encodeNorm($similarity->lengthNorm($fieldName, 0))),
+                    $this->docCount);
             }
 
             if (isset($docNorms[$fieldName])) {
-                $this->_norms[$fieldName] .= $docNorms[$fieldName];
+                $this->norms[$fieldName] .= $docNorms[$fieldName];
             } else {
-                $this->_norms[$fieldName] .= chr($similarity->encodeNorm($similarity->lengthNorm($fieldName, 0)));
+                $this->norms[$fieldName] .= chr($similarity->encodeNorm($similarity->lengthNorm($fieldName, 0)));
             }
         }
 
@@ -167,7 +167,7 @@ class DocumentWriter extends AbstractSegmentWriter
      */
     public function close()
     {
-        if ($this->_docCount == 0) {
+        if ($this->docCount == 0) {
             return null;
         }
 
@@ -176,9 +176,9 @@ class DocumentWriter extends AbstractSegmentWriter
 
         $this->_generateCFS();
 
-        return new SegmentInfo($this->_directory,
-            $this->_name,
-            $this->_docCount,
+        return new SegmentInfo($this->directory,
+            $this->name,
+            $this->docCount,
             -1,
             null,
             true,

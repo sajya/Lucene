@@ -19,7 +19,7 @@ class Analyzer
      *
      * @var AnalyzerInterface
      */
-    private static $_defaultImpl = null;
+    private static $defaultImpl = null;
 
     /**
      * Set the default AnalyzerInterface implementation used by indexing code.
@@ -28,7 +28,7 @@ class Analyzer
      */
     public static function setDefault(LuceneAnalyzer $analyzer): void
     {
-        self::$_defaultImpl = $analyzer;
+        self::$defaultImpl = $analyzer;
     }
 
     /**
@@ -38,10 +38,10 @@ class Analyzer
      */
     public static function getDefault(): LuceneAnalyzer
     {
-        if (self::$_defaultImpl === null) {
-            self::$_defaultImpl = new Common\Text\CaseInsensitive();
+        if (self::$defaultImpl === null) {
+            self::$defaultImpl = new Common\Text\CaseInsensitive();
         }
 
-        return self::$_defaultImpl;
+        return self::$defaultImpl;
     }
 }

@@ -24,7 +24,7 @@ class ShortWords implements TokenFilterInterface
     /**
      * Constructs new instance of this filter.
      *
-     * @param integer $short minimum allowed length of term which passes this filter (default 2)
+     * @param int $length minimum allowed length of term which passes this filter (default 2)
      */
     public function __construct(int $length = 2)
     {

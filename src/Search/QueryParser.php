@@ -91,7 +91,7 @@ class QueryParser extends Lucene\AbstractFSM
      *
      * @var string
      */
-    private $_encoding;   // First term in '{term1 to term2}' construction
+    private $encoding;   // First term in '{term1 to term2}' construction
     /**
      * Query string default encoding
      *
@@ -322,11 +322,11 @@ class QueryParser extends Lucene\AbstractFSM
         self::$_instance->reset();
 
         try {
-            self::$_instance->_encoding = $encoding ?? self::$_instance->_defaultEncoding;
+            self::$_instance->encoding = $encoding ?? self::$_instance->_defaultEncoding;
             self::$_instance->_lastToken = null;
-            self::$_instance->_context = new QueryParserContext(self::$_instance->_encoding);
+            self::$_instance->_context = new QueryParserContext(self::$_instance->encoding);
             self::$_instance->_contextStack = [];
-            self::$_instance->_tokens = self::$_instance->_lexer->tokenize($strQuery, self::$_instance->_encoding);
+            self::$_instance->_tokens = self::$_instance->_lexer->tokenize($strQuery, self::$_instance->encoding);
 
 
             // Empty query
@@ -357,7 +357,7 @@ class QueryParser extends Lucene\AbstractFSM
             return self::$_instance->_context->getQuery();
         } catch (QueryParserException $e) {
             if (self::$_instance->_suppressQueryParsingExceptions) {
-                $queryTokens = Analyzer\Analyzer::getDefault()->tokenize($strQuery, self::$_instance->_encoding);
+                $queryTokens = Analyzer\Analyzer::getDefault()->tokenize($strQuery, self::$_instance->encoding);
 
                 $query = new Query\MultiTerm();
                 $termsSign = (self::$_instance->_defaultOperator == self::B_AND) ? true /* required term */ :
@@ -459,7 +459,7 @@ class QueryParser extends Lucene\AbstractFSM
     public function subqueryStart(): void
     {
         $this->_contextStack[] = $this->_context;
-        $this->_context = new QueryParserContext($this->_encoding, $this->_context->getField());
+        $this->_context = new QueryParserContext($this->encoding, $this->_context->getField());
     }
 
     /**
@@ -500,7 +500,7 @@ class QueryParser extends Lucene\AbstractFSM
      */
     public function openedRQLastTerm(): void
     {
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_rqFirstTerm, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_rqFirstTerm, $this->encoding);
         if (count($tokens) > 1) {
             throw new QueryParserException('Range query boundary terms must be non-multiple word terms');
         }
@@ -511,7 +511,7 @@ class QueryParser extends Lucene\AbstractFSM
             $from = null;
         }
 
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_currentToken->text, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_currentToken->text, $this->encoding);
         if (count($tokens) > 1) {
             throw new QueryParserException('Range query boundary terms must be non-multiple word terms');
         }
@@ -546,7 +546,7 @@ class QueryParser extends Lucene\AbstractFSM
      */
     public function closedRQLastTerm(): void
     {
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_rqFirstTerm, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_rqFirstTerm, $this->encoding);
         if (count($tokens) > 1) {
             throw new QueryParserException('Range query boundary terms must be non-multiple word terms');
         }
@@ -557,7 +557,7 @@ class QueryParser extends Lucene\AbstractFSM
             $from = null;
         }
 
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_currentToken->text, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_currentToken->text, $this->encoding);
         if (count($tokens) > 1) {
             throw new QueryParserException('Range query boundary terms must be non-multiple word terms');
         }

@@ -128,7 +128,7 @@ class MultiSearcher implements SearchIndexInterface
     }
 
     /**
-     * Returns the Zend_Search_Lucene_Storage_Directory instance for this index.
+     * Returns the Zend_Search_Lucene_Storagedirectory instance for this index.
      *
      * @return DirectoryInterface
      * @throws UnsupportedMethodCallException

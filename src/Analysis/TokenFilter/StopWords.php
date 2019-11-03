@@ -31,7 +31,7 @@ class StopWords implements TokenFilterInterface
      *
      * @param array $stopwords array (set) of words that will be filtered out
      */
-    public function __construct($stopwords = [])
+    public function __construct(array $stopwords = [])
     {
         $this->stopSet = array_flip($stopwords);
     }

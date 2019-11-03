@@ -37,7 +37,7 @@ class Fuzzy extends AbstractPreprocessing
      *
      * @var string
      */
-    private $_encoding;
+    private $encoding;
 
 
     /**
@@ -69,7 +69,7 @@ class Fuzzy extends AbstractPreprocessing
     public function __construct($word, $encoding, $fieldName, $minimumSimilarity)
     {
         $this->_word = $word;
-        $this->_encoding = $encoding;
+        $this->encoding = $encoding;
         $this->_field = $fieldName;
         $this->_minimumSimilarity = $minimumSimilarity;
     }
@@ -97,7 +97,7 @@ class Fuzzy extends AbstractPreprocessing
 
             foreach ($searchFields as $fieldName) {
                 $subquery = new self($this->_word,
-                    $this->_encoding,
+                    $this->encoding,
                     $fieldName,
                     $this->_minimumSimilarity);
 
@@ -160,7 +160,7 @@ class Fuzzy extends AbstractPreprocessing
         $result = preg_match('/\pL/u', 'a');
         ErrorHandler::stop();
         if ($result == 1) {
-            $subPatterns = preg_split('/[*?]/u', iconv($this->_encoding, 'UTF-8', $this->_word));
+            $subPatterns = preg_split('/[*?]/u', iconv($this->encoding, 'UTF-8', $this->_word));
         } else {
             $subPatterns = preg_split('/[*?]/', $this->_word);
         }
@@ -171,7 +171,7 @@ class Fuzzy extends AbstractPreprocessing
 
         // -------------------------------------
         // Recognize one-term multi-term and "insignificant" queries
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->encoding);
 
         if (count($tokens) == 0) {
             $this->_matches = [];
@@ -238,7 +238,7 @@ class Fuzzy extends AbstractPreprocessing
         $result = preg_match('/\pL/u', 'a');
         ErrorHandler::stop();
         if ($result == 1) {
-            $subPatterns = preg_split('/[*?]/u', iconv($this->_encoding, 'UTF-8', $this->_word));
+            $subPatterns = preg_split('/[*?]/u', iconv($this->encoding, 'UTF-8', $this->_word));
         } else {
             $subPatterns = preg_split('/[*?]/', $this->_word);
         }
@@ -250,7 +250,7 @@ class Fuzzy extends AbstractPreprocessing
 
         // -------------------------------------
         // Recognize one-term multi-term and "insignificant" queries
-        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->_encoding);
+        $tokens = Analyzer\Analyzer::getDefault()->tokenize($this->_word, $this->encoding);
         if (count($tokens) == 0) {
             // Do nothing
             return;

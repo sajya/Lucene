@@ -32,7 +32,7 @@ class Filesystem implements DirectoryInterface
      */
     protected $_dirPath = null;
     /**
-     * Cache for Zend_Search_Lucene_Storage_File_Filesystem objects
+     * Cache for Zend_Search_Lucene_Storage_Filefilesystem objects
      * Array: filename => Zend_Search_Lucene_Storage_File object
      *
      * @throws ExceptionInterface

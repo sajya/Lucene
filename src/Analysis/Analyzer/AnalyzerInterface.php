@@ -21,18 +21,20 @@ interface AnalyzerInterface
      * Tokens are returned in UTF-8 (internal Zend_Search_Lucene encoding)
      *
      * @param string $data
+     * @param string $encoding
      *
      * @return array
      */
-    public function tokenize($data, $encoding = '');
+    public function tokenize(string $data, string $encoding = '');
 
     /**
      * Tokenization stream API
      * Set input
      *
      * @param string $data
+     * @param string $encoding
      */
-    public function setInput($data, $encoding = '');
+    public function setInput(string $data, string $encoding = '');
 
     /**
      * Reset token stream

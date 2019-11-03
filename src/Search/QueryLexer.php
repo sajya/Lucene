@@ -389,7 +389,7 @@ class QueryLexer extends Lucene\AbstractFSM
             // check,
             if ($this->_queryStringPosition == count($this->_queryString) ||
                 $this->_queryString[$this->_queryStringPosition] != $lexeme) {
-                throw new QueryParserException('Two chars lexeme expected. ' . $this->_positionMsg());
+                throw new QueryParserException('Two chars lexeme expected. ' . $this->positionMsg());
             }
 
             // duplicate character
@@ -404,7 +404,7 @@ class QueryLexer extends Lucene\AbstractFSM
         if ($token->type == QueryToken::TT_FIELD_INDICATOR) {
             $token = array_pop($this->_lexemes);
             if ($token === null || $token->type != QueryToken::TT_WORD) {
-                throw new QueryParserException('Field mark \':\' must follow field name. ' . $this->_positionMsg());
+                throw new QueryParserException('Field mark \':\' must follow field name. ' . $this->positionMsg());
             }
 
             $token->type = QueryToken::TT_FIELD;
@@ -418,7 +418,7 @@ class QueryLexer extends Lucene\AbstractFSM
      *
      * @return string
      */
-    private function _positionMsg(): string
+    private function positionMsg(): string
     {
         return 'Position is ' . $this->_queryStringPosition . '.';
     }
@@ -481,17 +481,17 @@ class QueryLexer extends Lucene\AbstractFSM
      *********************************************************************/
     public function lexModifierErrException(): void
     {
-        throw new QueryParserException('Lexeme modifier character can be followed only by number, white space or query syntax element. ' . $this->_positionMsg());
+        throw new QueryParserException('Lexeme modifier character can be followed only by number, white space or query syntax element. ' . $this->positionMsg());
     }
 
     public function quoteWithinLexemeErrException(): void
     {
-        throw new QueryParserException('Quote within lexeme must be escaped by \'\\\' char. ' . $this->_positionMsg());
+        throw new QueryParserException('Quote within lexeme must be escaped by \'\\\' char. ' . $this->positionMsg());
     }
 
     public function wrongNumberErrException(): void
     {
-        throw new QueryParserException('Wrong number syntax.' . $this->_positionMsg());
+        throw new QueryParserException('Wrong number syntax.' . $this->positionMsg());
     }
 }
 

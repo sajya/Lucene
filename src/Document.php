@@ -29,7 +29,7 @@ class Document
      *
      * @var array
      */
-    protected $_fields = [];
+    protected $fields = [];
 
     /**
      * Magic method for checking the existence of a field
@@ -50,7 +50,7 @@ class Document
      */
     public function getFieldNames(): array
     {
-        return array_keys($this->_fields);
+        return array_keys($this->fields);
     }
 
     /**
@@ -87,11 +87,11 @@ class Document
      */
     public function getField($fieldName): Field
     {
-        if (!array_key_exists($fieldName, $this->_fields)) {
+        if (!array_key_exists($fieldName, $this->fields)) {
             throw new InvalidArgumentException("Field name \"$fieldName\" not found in document.");
         }
 
-        return $this->_fields[$fieldName];
+        return $this->fields[$fieldName];
     }
 
     /**
@@ -103,7 +103,7 @@ class Document
      */
     public function addField(Document\Field $field): Document
     {
-        $this->_fields[$field->name] = $field;
+        $this->fields[$field->name] = $field;
 
         return $this;
     }
