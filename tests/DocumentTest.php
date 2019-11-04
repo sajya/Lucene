@@ -85,10 +85,8 @@ class DocumentTest extends TestCase
         $this->assertInstanceOf(Document\HTML::class, $doc);
 
         $doc->highlightExtended('document',
-            ['\ZendSearchTest\Lucene\DocHighlightingContainer',
-             'extendedHighlightingCallback'],
-            ['style="color:black;background-color:#ff66ff"',
-             '(!!!)']);
+            [DocHighlightingContainer::class, 'extendedHighlightingCallback'],
+            ['style="color:black;background-color:#ff66ff"', '(!!!)']);
 
         $this->assertNotSame(strpos($doc->getHTML(), '<b style="color:black;background-color:#ff66ff">Document</b>(!!!) body.'), false);
     }
@@ -110,10 +108,8 @@ class DocumentTest extends TestCase
         $this->assertTrue($doc instanceof Document\HTML);
 
         $doc->highlightExtended('document',
-            ['\ZendSearchTest\Lucene\DocHighlightingContainer',
-             'extendedHighlightingCallback'],
-            ['style="color:black;background-color:#ff66ff"',
-             '<h3>(!!!)' /* Wrong HTML here, <h3> tag is not closed */]);
+            [DocHighlightingContainer::class, 'extendedHighlightingCallback'],
+            ['style="color:black;background-color:#ff66ff"', '<h3>(!!!)' /* Wrong HTML here, <h3> tag is not closed */]);
         $this->assertTrue(strpos($doc->getHTML(), '<b style="color:black;background-color:#ff66ff">Document</b><h3>(!!!)</h3> body.') !== false);
     }
 
