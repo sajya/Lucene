@@ -16,14 +16,13 @@ class PriorityQueueTest extends TestCase
 {
     public function testCreate(): void
     {
-        $queue = new testPriorityQueueClass();
+        $queue = new TestPriorityQueueClass();
 
         $this->assertInstanceOf(Lucene\AbstractPriorityQueue::class, $queue);
     }
 
-    public function testPut(): void
-    {
-        $queue = new testPriorityQueueClass();
+    public function testPut(): void {
+        $queue = new TestPriorityQueueClass();
 
         $queue->put(1);
         $queue->put(100);
@@ -33,11 +32,20 @@ class PriorityQueueTest extends TestCase
         $queue->put(125);
         $queue->put(-10);
         $queue->put(100);
+
+        $this->assertEquals(-10, $queue->pop());
+        $this->assertEquals(1, $queue->pop());
+        $this->assertEquals(11, $queue->pop());
+        $this->assertEquals(46, $queue->pop());
+        $this->assertEquals(100, $queue->pop());
+        $this->assertEquals(100, $queue->pop());
+        $this->assertEquals(125, $queue->pop());
+        $this->assertEquals(347, $queue->pop());
     }
 
     public function testPop(): void
     {
-        $queue = new testPriorityQueueClass();
+        $queue = new TestPriorityQueueClass();
 
         $queue->put(1);
         $queue->put(100);
@@ -76,7 +84,7 @@ class PriorityQueueTest extends TestCase
 
     public function testClear(): void
     {
-        $queue = new testPriorityQueueClass();
+        $queue = new TestPriorityQueueClass();
 
         $queue->put(1);
         $queue->put(100);

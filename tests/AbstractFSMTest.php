@@ -18,24 +18,24 @@ class AbstractFSMTest extends TestCase
 {
     public function testCreate(): void
     {
-        $doorFSM = new testFSMClass();
+        $doorFSM = new TestFSMClass();
 
         $this->assertInstanceOf(Lucene\AbstractFSM::class, $doorFSM);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::OPENED);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::OPENED);
     }
 
     public function testSetState(): void
     {
-        $doorFSM = new testFSMClass();
+        $doorFSM = new TestFSMClass();
 
-        $this->assertEquals($doorFSM->getState(), testFSMClass::OPENED);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::OPENED);
 
-        $doorFSM->setState(testFSMClass::CLOSED_AND_LOCKED);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::CLOSED_AND_LOCKED);
+        $doorFSM->setState(TestFSMClass::CLOSED_AND_LOCKED);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::CLOSED_AND_LOCKED);
 
         $wrongStateExceptionCatched = false;
         try {
-            $doorFSM->setState(testFSMClass::OPENED_AND_LOCKED);
+            $doorFSM->setState(TestFSMClass::OPENED_AND_LOCKED);
         } catch (InvalidArgumentException $e) {
             $wrongStateExceptionCatched = true;
         }
@@ -44,34 +44,34 @@ class AbstractFSMTest extends TestCase
 
     public function testReset(): void
     {
-        $doorFSM = new testFSMClass();
+        $doorFSM = new TestFSMClass();
 
-        $doorFSM->setState(testFSMClass::CLOSED_AND_LOCKED);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::CLOSED_AND_LOCKED);
+        $doorFSM->setState(TestFSMClass::CLOSED_AND_LOCKED);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::CLOSED_AND_LOCKED);
 
         $doorFSM->reset();
-        $this->assertEquals($doorFSM->getState(), testFSMClass::OPENED);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::OPENED);
     }
 
     public function testProcess(): void
     {
-        $doorFSM = new testFSMClass();
+        $doorFSM = new TestFSMClass();
 
-        $doorFSM->process(testFSMClass::CLOSE);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::CLOSED);
+        $doorFSM->process(TestFSMClass::CLOSE);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::CLOSED);
 
-        $doorFSM->process(testFSMClass::LOCK);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::CLOSED_AND_LOCKED);
+        $doorFSM->process(TestFSMClass::LOCK);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::CLOSED_AND_LOCKED);
 
-        $doorFSM->process(testFSMClass::UNLOCK);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::CLOSED);
+        $doorFSM->process(TestFSMClass::UNLOCK);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::CLOSED);
 
-        $doorFSM->process(testFSMClass::OPEN);
-        $this->assertEquals($doorFSM->getState(), testFSMClass::OPENED);
+        $doorFSM->process(TestFSMClass::OPEN);
+        $this->assertEquals($doorFSM->getState(), TestFSMClass::OPENED);
 
         $wrongInputExceptionCatched = false;
         try {
-            $doorFSM->process(testFSMClass::LOCK);
+            $doorFSM->process(TestFSMClass::LOCK);
         } catch (ExceptionInterface $e) {
             $wrongInputExceptionCatched = true;
         }
@@ -80,22 +80,22 @@ class AbstractFSMTest extends TestCase
 
     public function testActions(): void
     {
-        $doorFSM = new testFSMClass();
+        $doorFSM = new TestFSMClass();
 
         $this->assertFalse($doorFSM->actionTracer->action2Passed /* 'closed' state entry action*/);
-        $doorFSM->process(testFSMClass::CLOSE);
+        $doorFSM->process(TestFSMClass::CLOSE);
         $this->assertTrue($doorFSM->actionTracer->action2Passed);
 
         $this->assertFalse($doorFSM->actionTracer->action8Passed /* 'closed' state exit action*/);
-        $doorFSM->process(testFSMClass::LOCK);
+        $doorFSM->process(TestFSMClass::LOCK);
         $this->assertTrue($doorFSM->actionTracer->action8Passed);
 
         $this->assertFalse($doorFSM->actionTracer->action4Passed /* 'closed&locked' state +'unlock' input action */);
-        $doorFSM->process(testFSMClass::UNLOCK);
+        $doorFSM->process(TestFSMClass::UNLOCK);
         $this->assertTrue($doorFSM->actionTracer->action4Passed);
 
         $this->assertFalse($doorFSM->actionTracer->action6Passed /* 'locked' -> 'opened' transition action action */);
-        $doorFSM->process(testFSMClass::OPEN);
+        $doorFSM->process(TestFSMClass::OPEN);
         $this->assertTrue($doorFSM->actionTracer->action6Passed);
     }
 }

@@ -157,7 +157,7 @@ class SearchHighlightTest extends TestCase
 
     public function testHighlightFuzzy1(): void
     {
-        $query = Search\QueryParser::parse('test~');
+        $query = Search\QueryParser::parse('123test~');
 
         $html = '<HTML>'
             . '<HEAD><TITLE>Page title</TITLE></HEAD>'

@@ -303,7 +303,7 @@ class HTML extends Document
      * @return string
      * @throws InvalidArgumentException
      */
-    public function highlightExtended($words, $callback, $params = [])
+    public function highlightExtended($words, callable $callback, array $params = [])
     {
         if (!is_array($words)) {
             $words = [$words];
@@ -323,10 +323,6 @@ class HTML extends Document
         $wordsToHighlightFlipped = [];
         foreach ($wordsToHighlight as $id => $token) {
             $wordsToHighlightFlipped[$token->getTermText()] = $id;
-        }
-
-        if (!is_callable($callback)) {
-            throw new InvalidArgumentException('$viewHelper parameter mast be a View Helper name, View Helper object or callback.');
         }
 
         $xpath = new DOMXPath($this->_doc);
